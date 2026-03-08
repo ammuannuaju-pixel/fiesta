@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fiesta - Books for Every Soul</title>
+  <link rel="stylesheet" href="styles.css" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Cormorant+SC:wght@300;400;600;700&family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Jost:wght@200;300;400;500&display=swap"
+    rel="stylesheet"
+  />
+</head>
+<body>
+
+  <!-- Seasonal particle canvas (fixed, behind everything) -->
+  <canvas id="seasonalCanvas"></canvas>
+
+  <!-- Top navigation -->
+  <nav id="mainNav">
+    <div class="nav-brand">FIESTA</div>
+    <div class="nav-tagline">Books for Every Soul</div>
+  </nav>
+
+  <!-- ===================== HERO ===================== -->
+  <section id="hero">
+    <div class="hero-content">
+      <div class="hero-label">WELCOME TO</div>
+      <h1 class="hero-title" aria-label="Fiesta">
+        <span class="tc">F</span>
+        <span class="tc">I</span>
+        <span class="tc">E</span>
+        <span class="tc">S</span>
+        <span class="tc">T</span>
+        <span class="tc">A</span>
+      </h1>
+      <p class="hero-subtitle">Your mood. Your story. Your next obsession.</p>
+      <div class="scroll-prompt">
+        <span>Begin Your Journey</span>
+        <div class="scroll-line"></div>
+      </div>
+    </div>
+    <div class="hero-deco" aria-hidden="true">
+      <div class="deco-ring r1"></div>
+      <div class="deco-ring r2"></div>
+      <div class="deco-ring r3"></div>
+      <div class="deco-dot d1"></div>
+      <div class="deco-dot d2"></div>
+      <div class="deco-dot d3"></div>
+    </div>
+  </section>
+
+  <!-- Seasonal banner (shown on scroll) -->
+  <div id="seasonalBanner" class="seasonal-banner hidden" role="banner"></div>
+
+  <!-- ===================== QUIZ ===================== -->
+  <section id="quiz">
+    <div class="quiz-container">
+
+      <div class="quiz-header">
+        <h2>Discover Your Next Read</h2>
+        <p>A few questions to curate the perfect reading list for you</p>
+      </div>
+
+      <div class="progress-bar" role="progressbar" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100">
+        <div class="progress-fill" id="progressFill"></div>
+      </div>
+      <div class="progress-text" id="progressText">Step 1 of 4</div>
+
+      <!-- Step 1: Genre -->
+      <div class="quiz-step active" id="step1">
+        <h3 class="step-question">What genre speaks to your soul right now?</h3>
+        <div class="options-grid">
+          <button class="option-btn" data-value="romance">Romance</button>
+          <button class="option-btn" data-value="fantasy">Fantasy</button>
+          <button class="option-btn" data-value="mystery">Mystery</button>
+          <button class="option-btn" data-value="scifi">Science Fiction</button>
+          <button class="option-btn" data-value="thriller">Thriller</button>
+          <button class="option-btn" data-value="literary">Literary Fiction</button>
+          <button class="option-btn" data-value="historical">Historical Fiction</button>
+          <button class="option-btn" data-value="nonfiction">Non-Fiction</button>
+        </div>
+      </div>
+
+      <!-- Step 2: Sub-genre (dynamically filled) -->
+      <div class="quiz-step" id="step2">
+        <h3 class="step-question" id="subgenreQ">Narrow it down...</h3>
+        <div class="options-grid" id="subgenreGrid"></div>
+      </div>
+
+      <!-- Step 3: Mood -->
+      <div class="quiz-step" id="step3">
+        <h3 class="step-question">What is your emotional state right now?</h3>
+        <div class="options-grid">
+          <button class="option-btn" data-value="happy">Joyful and Light</button>
+          <button class="option-btn" data-value="melancholic">Wistful and Reflective</button>
+          <button class="option-btn" data-value="adventurous">Bold and Restless</button>
+          <button class="option-btn" data-value="peaceful">Calm and Serene</button>
+          <button class="option-btn" data-value="dark">Dark and Intense</button>
+          <button class="option-btn" data-value="hopeful">Hopeful and Inspired</button>
+          <button class="option-btn" data-value="romantic">Yearning and Romantic</button>
+          <button class="option-btn" data-value="curious">Curious and Intrigued</button>
+        </div>
+      </div>
+
+      <!-- Step 4: Length + Submit -->
+      <div class="quiz-step" id="step4">
+        <h3 class="step-question">How deep do you want to dive in?</h3>
+        <div class="options-grid three-col">
+          <button class="option-btn tall" data-value="short">
+            <span class="opt-title">Quick Escape</span>
+            <span class="opt-sub">Under 300 pages</span>
+          </button>
+          <button class="option-btn tall" data-value="medium">
+            <span class="opt-title">Perfect Balance</span>
+            <span class="opt-sub">300 to 500 pages</span>
+          </button>
+          <button class="option-btn tall" data-value="long">
+            <span class="opt-title">Full Immersion</span>
+            <span class="opt-sub">500 or more pages</span>
+          </button>
+        </div>
+        <button class="cta-btn" id="revealBtn" disabled>Reveal My Books</button>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ===================== RESULTS ===================== -->
+  <section id="results" class="hidden">
+
+    <div class="results-header">
+      <div class="results-label">YOUR CURATED LIST</div>
+      <h2 id="resultsTitle">Books Chosen For Your Soul</h2>
+      <p id="resultsSubtitle"></p>
+    </div>
+
+    <!-- Music player -->
+    <div class="music-bar" id="musicBar">
+      <div class="music-waves" id="musicWaves" aria-hidden="true">
+        <span></span><span></span><span></span><span></span><span></span>
+      </div>
+      <div class="music-meta">
+        <div class="music-name" id="musicName">Ambient Soundtrack</div>
+        <div class="music-vibe" id="musicVibe">Curated for your vibe</div>
+      </div>
+      <button class="music-btn" id="musicBtn">Enable Music</button>
+      <div class="yt-wrap hidden" id="ytWrap">
+        <iframe
+          id="ytFrame"
+          width="1"
+          height="1"
+          frameborder="0"
+          allow="autoplay; encrypted-media"
+          title="Background music player"
+        ></iframe>
+      </div>
+    </div>
+
+    <!-- Loading state -->
+    <div class="loading-wrap" id="loadingWrap">
+      <div class="loader-ring"></div>
+      <p class="loader-text">Curating your perfect reads...</p>
+    </div>
+
+    <!-- Book cards -->
+    <div class="books-grid" id="booksGrid"></div>
+
+    <!-- Restart -->
+    <div class="restart-row">
+      <button class="restart-btn" id="restartBtn">Start Over</button>
+    </div>
+
+  </section>
+
+  <script src="script.js"></script>
+</body>
+</html>
