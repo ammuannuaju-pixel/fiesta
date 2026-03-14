@@ -21,7 +21,7 @@ exports.handler = async function (event) {
       generationConfig: { temperature: 0.7, maxOutputTokens: 2000 }
     });
 
-    const path = `/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+    const path = `/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
 
     const rawResult = await new Promise((resolve, reject) => {
       const options = {
