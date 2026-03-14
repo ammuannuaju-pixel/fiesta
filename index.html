@@ -19,6 +19,7 @@
   <nav id="mainNav">
     <div class="nav-brand">FIESTA</div>
     <div class="nav-tagline">Books for Every Soul</div>
+    <div id="navUser" style="display:none" class="nav-user"></div>
   </nav>
 
   <!-- ===================== HERO ===================== -->
@@ -193,6 +194,55 @@
   <script src="supabase.js"></script>
   <script src="auth.js"></script>
   <script src="social.js"></script>
+  <script src="modal.js"></script>
   <script src="script.js"></script>
+  <!-- Username Modal -->
+<div class="modal-overlay hidden" id="authModal">
+  <div class="modal-box">
+    <div class="modal-label">JOIN FIESTA</div>
+    <h3 class="modal-title">Create Your Reader Identity</h3>
+    <p class="modal-sub">Set a username to save your taste profile and connect with other readers.</p>
+
+    <div class="modal-field">
+      <label class="modal-field-label">Username</label>
+      <input
+        type="text"
+        id="usernameInput"
+        placeholder="e.g. darkromance_lover"
+        maxlength="24"
+        autocomplete="off"
+      />
+      <div class="modal-field-hint">Letters, numbers and underscores only. Max 24 characters.</div>
+    </div>
+
+    <div class="modal-field">
+      <label class="modal-field-label">Email <span class="optional">(optional)</span></label>
+      <input
+        type="email"
+        id="emailInput"
+        placeholder="you@example.com"
+        autocomplete="off"
+      />
+      <div class="modal-field-hint">Add an email to keep your profile across devices.</div>
+    </div>
+
+    <div class="modal-field">
+      <label class="modal-field-label" id="passwordLabel" style="display:none">Password</label>
+      <input
+        type="password"
+        id="passwordInput"
+        placeholder="At least 8 characters"
+        maxlength="72"
+        autocomplete="new-password"
+        style="display:none"
+      />
+    </div>
+
+    <div class="modal-error hidden" id="modalError"></div>
+
+    <button class="modal-submit" id="modalSubmit">Save My Identity</button>
+    <button class="modal-skip" id="modalSkip">Skip for now</button>
+  </div>
+</div>
 </body>
 </html>

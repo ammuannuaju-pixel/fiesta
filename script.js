@@ -500,6 +500,7 @@ revealBtn.addEventListener("click", async () => {
   renderReaderTwins();
   renderFeed();
   enterReadingRoom(sel.genre, sel.mood);
+  triggerAuthModalIfNeeded();
 });
 
 
