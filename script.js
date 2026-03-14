@@ -537,7 +537,7 @@ function toggleMusic() {
 }
 
 // ─────────────────────────────────────────────
-//  FETCH BOOKS VIA ANTHROPIC API
+//  FETCH BOOKS VIA GOOGLE BOOKS API
 // ─────────────────────────────────────────────
 
 async function fetchBooks() {
@@ -549,55 +549,42 @@ async function fetchBooks() {
   booksGrid.innerHTML = "";
   subtitle.textContent = "";
 
-  const moodLabel   = MOOD_LABELS[sel.mood]   || sel.mood   || "reflective";
-  const lengthLabel = LENGTH_LABELS[sel.length] || sel.length || "medium length";
-
-  const prompt = `You are a world-class literary curator. Based on the preferences below, recommend exactly 6 books.
-
-Reader preferences:
-- Genre: ${sel.genre}
-- Sub-genre: ${sel.subgenre}
-- Emotional mood: ${moodLabel}
-- Desired length: ${lengthLabel}
-
-Return ONLY a valid JSON array with no other text, preamble, or markdown fences. Format:
-[
-  {
-    "title": "Exact Book Title",
-    "author": "Full Author Name",
-    "isbn": "ISBN-13 preferred, or ISBN-10",
-    "year": "Publication year",
-    "description": "Two to three sentences capturing the essence of the book and why it perfectly matches this reader's mood and genre.",
-    "tags": ["tag1", "tag2", "tag3"]
-  }
-]
-
-Requirements:
-- Include accurate ISBN numbers so cover images can be retrieved.
-- Select beloved, acclaimed books that genuinely match the mood.
-- Vary across different decades and styles.
-- Do not include any emoji or emoticons in any field.`;
+  const moodLabel = MOOD_LABELS[sel.mood] || sel.mood || "reflective";
 
   try {
-    const response = await fetch("/.netlify/functions/recommend", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ prompt }),
-    });
+    const query = buildSearchQuery(sel.genre, sel.subgenre, sel.mood);
+    const url = `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=12&orderBy=relevance&printType=books&langRestrict=en`;
 
+    const response = await fetch(url);
     const data = await response.json();
-    console.log("API response:", JSON.stringify(data));
-    if (data.error) throw new Error("API error: " + data.error.message);
-    const raw  = (data.content || []).map(c => c.text || "").join("");
 
-    const clean = raw.replace(/```json[\s\S]*?```|```[\s\S]*?```/g, t => t.replace(/```json|```/g, "")).trim();
+    if (!data.items || data.items.length === 0) {
+      throw new Error("No books found");
+    }
 
-    // Extract JSON array from response
-    const jsonStart = clean.indexOf("[");
-    const jsonEnd   = clean.lastIndexOf("]");
-    if (jsonStart === -1 || jsonEnd === -1) throw new Error("No JSON array found. Raw response was: " + raw);
+    const books = data.items
+      .filter(item => {
+        const info = item.volumeInfo;
+        return info.title && info.authors && info.description;
+      })
+      .slice(0, 6)
+      .map(item => {
+        const info = item.volumeInfo;
+        const isbn = info.industryIdentifiers?.find(id => id.type === "ISBN_13")?.identifier
+                  || info.industryIdentifiers?.find(id => id.type === "ISBN_10")?.identifier
+                  || "";
+        return {
+          title:       info.title,
+          author:      info.authors?.[0] || "Unknown Author",
+          isbn:        isbn,
+          year:        info.publishedDate?.slice(0, 4) || "",
+          description: (info.description?.slice(0, 220) || "") + "...",
+          tags:        info.categories?.slice(0, 3) || [sel.genre],
+          cover:       info.imageLinks?.thumbnail?.replace("http://", "https://") || ""
+        };
+      });
 
-    const books = JSON.parse(clean.substring(jsonStart, jsonEnd + 1));
+    if (books.length === 0) throw new Error("No suitable books found");
 
     loadingWrap.classList.add("hidden");
     subtitle.textContent = `Six books curated for your ${moodLabel} soul`;
@@ -607,6 +594,21 @@ Requirements:
     console.error("Book fetch error:", err);
     loadingWrap.innerHTML = `<p style="color:var(--pink-pale);font-family:var(--font-i);font-style:italic">Something went wrong while curating your list. Please try again.</p>`;
   }
+}
+
+function buildSearchQuery(genre, subgenre, mood) {
+  const moodKeywords = {
+    happy:       "uplifting feel good",
+    melancholic: "emotional heartbreaking",
+    adventurous: "adventure action exciting",
+    peaceful:    "gentle quiet cozy",
+    dark:        "dark suspense psychological",
+    hopeful:     "inspiring hopeful redemption",
+    romantic:    "romance love passionate",
+    curious:     "mystery fascinating discovery"
+  };
+  const moodWord = moodKeywords[mood] || mood;
+  return `${subgenre} ${genre} ${moodWord} fiction`;
 }
 
 // ─────────────────────────────────────────────
@@ -628,7 +630,7 @@ function renderBooks(books) {
 
   books.forEach((book, i) => {
     const isbn    = book.isbn ? String(book.isbn).replace(/[-\s]/g, "") : "";
-    const coverURL = isbn ? `https://covers.openlibrary.org/b/isbn/${isbn}-L.jpg` : "";
+    const coverURL = book.cover || (isbn ? `https://covers.openlibrary.org/b/isbn/${isbn}-L.jpg` : "");
 
     const tagsHTML = Array.isArray(book.tags)
       ? book.tags.map(t => `<span class="book-tag">${esc(t)}</span>`).join("")
