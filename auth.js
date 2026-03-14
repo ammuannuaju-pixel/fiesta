@@ -34,7 +34,7 @@ async function loadProfile(userId) {
     .from("profiles")
     .select("*")
     .eq("id", userId)
-    .single();
+    .maybeSingle();
   return data || null;
 }
 
