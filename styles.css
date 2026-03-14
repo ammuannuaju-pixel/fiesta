@@ -1158,3 +1158,152 @@ body {
   padding: 0.3rem 0.8rem;
   cursor: default;
 }
+/* ===== ARCHETYPE CARD ===== */
+
+.archetype-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.92);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  backdrop-filter: blur(10px);
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+
+.archetype-box {
+  position: relative;
+  max-width: 480px;
+  width: 100%;
+  padding: 3.5rem 2.5rem;
+  background: var(--arch-bg, #080008);
+  border: 1px solid var(--arch-color, #FF1493);
+  text-align: center;
+  transform: scale(0.92) translateY(24px);
+  transition: transform 0.5s cubic-bezier(0.16,1,0.3,1);
+  box-shadow:
+    0 0 60px rgba(0,0,0,0.8),
+    0 0 40px color-mix(in srgb, var(--arch-color) 20%, transparent);
+  overflow: hidden;
+}
+
+.arch-deco-ring {
+  position: absolute;
+  width: 340px; height: 340px;
+  border-radius: 50%;
+  border: 1px solid var(--arch-color);
+  opacity: 0.08;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.arch-top { margin-bottom: 2rem; }
+
+.arch-site-name {
+  font-family: var(--font-d);
+  font-size: 0.85rem;
+  letter-spacing: 0.55em;
+  color: var(--arch-color);
+  opacity: 0.7;
+  margin-bottom: 0.4rem;
+}
+
+.arch-label {
+  font-size: 0.62rem;
+  letter-spacing: 0.45em;
+  color: var(--arch-color);
+  opacity: 0.45;
+  font-family: var(--font-b);
+  font-weight: 300;
+}
+
+.arch-name {
+  font-family: var(--font-d);
+  font-size: clamp(1.6rem, 5vw, 2.4rem);
+  font-weight: 700;
+  color: #ffffff;
+  line-height: 1.15;
+  margin-bottom: 1.2rem;
+  letter-spacing: 0.02em;
+}
+
+.arch-divider {
+  width: 60px;
+  height: 1px;
+  background: var(--arch-color);
+  margin: 0 auto 1.2rem;
+  opacity: 0.6;
+}
+
+.arch-desc {
+  font-family: var(--font-i);
+  font-style: italic;
+  font-size: 1rem;
+  color: rgba(255,255,255,0.7);
+  line-height: 1.7;
+  margin-bottom: 1.8rem;
+  max-width: 360px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.arch-meta {
+  font-size: 0.7rem;
+  letter-spacing: 0.3em;
+  color: var(--arch-color);
+  text-transform: uppercase;
+  margin-bottom: 0.5rem;
+  opacity: 0.7;
+}
+
+.arch-dot { margin: 0 0.5rem; opacity: 0.4; }
+
+.arch-user {
+  font-family: var(--font-i);
+  font-style: italic;
+  font-size: 0.82rem;
+  color: rgba(255,255,255,0.35);
+  margin-bottom: 2.5rem;
+}
+
+.arch-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.arch-btn-share {
+  padding: 0.9rem;
+  background: var(--arch-color);
+  border: none;
+  color: #000000;
+  font-family: var(--font-d);
+  font-size: 0.82rem;
+  letter-spacing: 0.25em;
+  cursor: pointer;
+  transition: opacity 0.25s ease;
+  font-weight: 600;
+}
+
+.arch-btn-share:hover { opacity: 0.85; }
+
+.arch-btn-close {
+  padding: 0.9rem;
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.15);
+  color: rgba(255,255,255,0.45);
+  font-family: var(--font-b);
+  font-size: 0.78rem;
+  letter-spacing: 0.18em;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.arch-btn-close:hover {
+  border-color: var(--arch-color);
+  color: var(--arch-color);
+}
