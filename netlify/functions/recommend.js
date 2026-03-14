@@ -17,7 +17,7 @@ exports.handler = async function (event) {
     }
 
     const payload = JSON.stringify({
-      model: "mistralai/mistral-7b-instruct:free",
+      model: "meta-llama/llama-3.2-3b-instruct:free",
       messages: [{ role: "user", content: prompt }],
       max_tokens: 1500
     });
