@@ -597,20 +597,59 @@ async function fetchBooks() {
 }
 
 function buildSearchQuery(genre, subgenre, mood) {
-  const moodKeywords = {
-    happy:       "uplifting feel good",
-    melancholic: "emotional heartbreaking",
-    adventurous: "adventure action exciting",
-    peaceful:    "gentle quiet cozy",
-    dark:        "dark suspense psychological",
-    hopeful:     "inspiring hopeful redemption",
-    romantic:    "romance love passionate",
-    curious:     "mystery fascinating discovery"
+  const subgenreMap = {
+    "Dark Romance":           "dark romance novel",
+    "Contemporary Romance":   "contemporary romance novel",
+    "Historical Romance":     "historical romance novel",
+    "Paranormal Romance":     "paranormal romance novel",
+    "Romantic Comedy":        "romantic comedy novel",
+    "Slow Burn":              "slow burn romance novel",
+    "Epic Fantasy":           "epic fantasy novel",
+    "Dark Fantasy":           "dark fantasy novel",
+    "Urban Fantasy":          "urban fantasy novel",
+    "Romantasy":              "fantasy romance novel",
+    "High Fantasy":           "high fantasy novel",
+    "Fae and Magic":          "fae fantasy novel",
+    "Cozy Mystery":           "cozy mystery novel",
+    "Noir Detective":         "noir detective novel",
+    "Psychological Mystery":  "psychological mystery novel",
+    "True Crime":             "true crime book",
+    "Locked Room":            "locked room mystery novel",
+    "Whodunit":               "whodunit mystery novel",
+    "Space Opera":            "space opera science fiction",
+    "Dystopian":              "dystopian fiction novel",
+    "Cyberpunk":              "cyberpunk science fiction",
+    "Hard Sci-Fi":            "hard science fiction novel",
+    "Time Travel":            "time travel fiction novel",
+    "AI and Robots":          "artificial intelligence fiction",
+    "Psychological Thriller": "psychological thriller novel",
+    "Legal Thriller":         "legal thriller novel",
+    "Political Thriller":     "political thriller novel",
+    "Domestic Thriller":      "domestic thriller novel",
+    "Espionage":              "espionage spy thriller",
+    "Medical Thriller":       "medical thriller novel",
+    "Character Study":        "literary fiction character",
+    "Experimental":           "experimental literary fiction",
+    "Coming of Age":          "coming of age novel",
+    "Family Saga":            "family saga fiction",
+    "Social Commentary":      "social commentary fiction",
+    "Philosophical":          "philosophical fiction novel",
+    "Medieval":               "medieval historical fiction",
+    "Victorian Era":          "victorian historical fiction",
+    "World Wars":             "world war historical fiction",
+    "Ancient Civilizations":  "ancient historical fiction",
+    "Renaissance":            "renaissance historical fiction",
+    "Colonial Era":           "colonial historical fiction",
+    "Memoir and Biography":   "memoir biography",
+    "Popular Science":        "popular science book",
+    "Psychology":             "psychology book",
+    "Philosophy":             "philosophy book",
+    "Self Development":       "self help book",
   };
-  const moodWord = moodKeywords[mood] || mood;
-  return `${subgenre} ${genre} ${moodWord} fiction`;
-}
 
+  const searchTerm = subgenreMap[subgenre] || `${subgenre} ${genre}`;
+  return `subject:${genre} ${searchTerm} bestseller`;
+}
 // ─────────────────────────────────────────────
 //  RENDER BOOKS
 // ─────────────────────────────────────────────
