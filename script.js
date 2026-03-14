@@ -586,7 +586,10 @@ Requirements:
     });
 
     const data = await response.json();
+    console.log("API response:", JSON.stringify(data));
+    if (data.error) throw new Error("API error: " + data.error.message);
     const raw  = (data.content || []).map(c => c.text || "").join("");
+
     const clean = raw.replace(/```json[\s\S]*?```|```[\s\S]*?```/g, t => t.replace(/```json|```/g, "")).trim();
 
     // Extract JSON array from response
