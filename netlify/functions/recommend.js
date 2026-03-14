@@ -7,30 +7,32 @@ exports.handler = async function (event) {
 
   try {
     const { prompt } = JSON.parse(event.body);
-    const apiKey = process.env.GEMINI_API_KEY;
+    const apiKey = process.env.OPENROUTER_API_KEY;
 
     if (!apiKey) {
       return {
         statusCode: 500,
-        body: JSON.stringify({ content: [{ text: "GEMINI_API_KEY is not set" }] })
+        body: JSON.stringify({ content: [{ text: "OPENROUTER_API_KEY is not set" }] })
       };
     }
 
     const payload = JSON.stringify({
-      contents: [{ parts: [{ text: prompt }] }],
-      generationConfig: { temperature: 0.7, maxOutputTokens: 2000 }
+      model: "mistralai/mistral-7b-instruct:free",
+      messages: [{ role: "user", content: prompt }],
+      max_tokens: 1500
     });
-
-    const path = `/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
 
     const rawResult = await new Promise((resolve, reject) => {
       const options = {
-        hostname: "generativelanguage.googleapis.com",
-        path:     path,
+        hostname: "openrouter.ai",
+        path:     "/api/v1/chat/completions",
         method:   "POST",
         headers: {
           "Content-Type":   "application/json",
+          "Authorization":  `Bearer ${apiKey}`,
           "Content-Length": Buffer.byteLength(payload),
+          "HTTP-Referer":   "https://stirring-cupcake-0aa910.netlify.app",
+          "X-Title":        "Fiesta Book App"
         },
       };
 
@@ -45,19 +47,16 @@ exports.handler = async function (event) {
       req.end();
     });
 
-    console.log("Raw Gemini response:", rawResult);
-
     const parsed = JSON.parse(rawResult);
 
-    // Check for API errors
     if (parsed.error) {
       return {
         statusCode: 200,
-        body: JSON.stringify({ content: [{ text: "Gemini error: " + parsed.error.message }] })
+        body: JSON.stringify({ content: [{ text: "OpenRouter error: " + parsed.error.message }] })
       };
     }
 
-    const text = parsed?.candidates?.[0]?.content?.parts?.[0]?.text || "";
+    const text = parsed?.choices?.[0]?.message?.content || "";
 
     return {
       statusCode: 200,
