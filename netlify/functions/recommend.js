@@ -7,32 +7,31 @@ exports.handler = async function (event) {
 
   try {
     const { prompt } = JSON.parse(event.body);
-    const apiKey = process.env.OPENROUTER_API_KEY;
+    const apiKey = process.env.COHERE_API_KEY;
 
     if (!apiKey) {
       return {
         statusCode: 500,
-        body: JSON.stringify({ content: [{ text: "OPENROUTER_API_KEY is not set" }] })
+        body: JSON.stringify({ content: [{ text: "COHERE_API_KEY is not set" }] })
       };
     }
 
     const payload = JSON.stringify({
-      model: "meta-llama/llama-3.2-3b-instruct:free",
-      messages: [{ role: "user", content: prompt }],
-      max_tokens: 1500
+      model:       "command-r-plus",
+      message:     prompt,
+      max_tokens:  1500,
+      temperature: 0.7
     });
 
     const rawResult = await new Promise((resolve, reject) => {
       const options = {
-        hostname: "openrouter.ai",
-        path:     "/api/v1/chat/completions",
+        hostname: "api.cohere.com",
+        path:     "/v1/chat",
         method:   "POST",
         headers: {
           "Content-Type":   "application/json",
           "Authorization":  `Bearer ${apiKey}`,
           "Content-Length": Buffer.byteLength(payload),
-          "HTTP-Referer":   "https://stirring-cupcake-0aa910.netlify.app",
-          "X-Title":        "Fiesta Book App"
         },
       };
 
@@ -49,14 +48,14 @@ exports.handler = async function (event) {
 
     const parsed = JSON.parse(rawResult);
 
-    if (parsed.error) {
+    if (parsed.message && !parsed.text) {
       return {
         statusCode: 200,
-        body: JSON.stringify({ content: [{ text: "OpenRouter error: " + parsed.error.message }] })
+        body: JSON.stringify({ content: [{ text: "Cohere error: " + parsed.message }] })
       };
     }
 
-    const text = parsed?.choices?.[0]?.message?.content || "";
+    const text = parsed?.text || "";
 
     return {
       statusCode: 200,
