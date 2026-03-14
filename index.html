@@ -164,7 +164,24 @@
 
     <!-- Book cards -->
     <div class="books-grid" id="booksGrid"></div>
+    <!-- Reader Twins -->
+    <div class="social-section" id="twinsContainer"></div>
 
+    <!-- Activity Feed -->
+    <div class="social-section" id="feedContainer"></div>
+
+    <!-- Reading Room -->
+    <div class="reading-room hidden" id="readingRoomWrap">
+      <div class="room-header">
+        <div class="room-title" id="roomTitle"></div>
+        <div class="connection-dot" id="connectionDot"></div>
+      </div>
+      <div class="chat-messages" id="chatMessages"></div>
+      <div class="chat-input-wrap">
+        <input type="text" id="chatInput" placeholder="Say something to your reading room..." maxlength="500" />
+        <button onclick="sendChatMessage(document.getElementById('chatInput').value)">Send</button>
+      </div>
+    </div>
     <!-- Restart -->
     <div class="restart-row">
       <button class="restart-btn" id="restartBtn">Start Over</button>
@@ -172,6 +189,10 @@
 
   </section>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="supabase.js"></script>
+  <script src="auth.js"></script>
+  <script src="social.js"></script>
   <script src="script.js"></script>
 </body>
 </html>

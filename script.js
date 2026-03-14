@@ -496,7 +496,12 @@ revealBtn.addEventListener("click", async () => {
 
   setupMusicBar(sel.genre);
   await fetchBooks();
+  if (currentUser) saveQuizResult(sel, []);
+  renderReaderTwins();
+  renderFeed();
+  enterReadingRoom(sel.genre, sel.mood);
 });
+
 
 // ─────────────────────────────────────────────
 //  MUSIC PLAYER
