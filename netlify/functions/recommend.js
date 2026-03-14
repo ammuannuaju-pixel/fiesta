@@ -7,16 +7,23 @@ exports.handler = async function (event) {
 
   try {
     const { prompt } = JSON.parse(event.body);
+    const apiKey = process.env.GEMINI_API_KEY;
+
+    if (!apiKey) {
+      return {
+        statusCode: 500,
+        body: JSON.stringify({ content: [{ text: "GEMINI_API_KEY is not set" }] })
+      };
+    }
 
     const payload = JSON.stringify({
       contents: [{ parts: [{ text: prompt }] }],
-      generationConfig: { temperature: 0.7, maxOutputTokens: 1000 }
+      generationConfig: { temperature: 0.7, maxOutputTokens: 2000 }
     });
 
-    const apiKey = process.env.GEMINI_API_KEY;
     const path = `/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
 
-    const result = await new Promise((resolve, reject) => {
+    const rawResult = await new Promise((resolve, reject) => {
       const options = {
         hostname: "generativelanguage.googleapis.com",
         path:     path,
@@ -38,8 +45,19 @@ exports.handler = async function (event) {
       req.end();
     });
 
-    const parsed = JSON.parse(result);
-    const text = parsed.candidates?.[0]?.content?.parts?.[0]?.text || "";
+    console.log("Raw Gemini response:", rawResult);
+
+    const parsed = JSON.parse(rawResult);
+
+    // Check for API errors
+    if (parsed.error) {
+      return {
+        statusCode: 200,
+        body: JSON.stringify({ content: [{ text: "Gemini error: " + parsed.error.message }] })
+      };
+    }
+
+    const text = parsed?.candidates?.[0]?.content?.parts?.[0]?.text || "";
 
     return {
       statusCode: 200,

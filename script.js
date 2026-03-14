@@ -595,7 +595,7 @@ Requirements:
     // Extract JSON array from response
     const jsonStart = clean.indexOf("[");
     const jsonEnd   = clean.lastIndexOf("]");
-    if (jsonStart === -1 || jsonEnd === -1) throw new Error("No JSON array found");
+    if (jsonStart === -1 || jsonEnd === -1) throw new Error("No JSON array found. Raw response was: " + raw);
 
     const books = JSON.parse(clean.substring(jsonStart, jsonEnd + 1));
 
