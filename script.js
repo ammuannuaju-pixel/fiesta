@@ -543,7 +543,7 @@ function toggleMusic() {
 }
 
 // ─────────────────────────────────────────────
-//  FETCH BOOKS VIA GOOGLE BOOKS API
+//  FETCH BOOKS — CURATED + GOOGLE BOOKS
 // ─────────────────────────────────────────────
 
 async function fetchBooks() {
@@ -557,23 +557,34 @@ async function fetchBooks() {
 
   const moodLabel = MOOD_LABELS[sel.mood] || sel.mood || "reflective";
 
+  await new Promise(r => setTimeout(r, 800));
+
   try {
+    // Get curated seed books first
+    const seedBooks = typeof getSeededBooks === "function"
+      ? getSeededBooks(sel.genre, sel.mood)
+      : [];
+
+    // If we have 6 good seed books use them directly
+    if (seedBooks.length >= 6) {
+      loadingWrap.classList.add("hidden");
+      subtitle.textContent = `Six books curated for your ${moodLabel} soul`;
+      renderBooks(seedBooks);
+      return;
+    }
+
+    // Otherwise supplement with Google Books
     const query = buildSearchQuery(sel.genre, sel.subgenre, sel.mood);
     const url = `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=12&orderBy=relevance&printType=books&langRestrict=en`;
 
     const response = await fetch(url);
     const data = await response.json();
 
-    if (!data.items || data.items.length === 0) {
-      throw new Error("No books found");
-    }
-
-    const books = data.items
+    const googleBooks = (data.items || [])
       .filter(item => {
         const info = item.volumeInfo;
         return info.title && info.authors && info.description;
       })
-      .slice(0, 6)
       .map(item => {
         const info = item.volumeInfo;
         const isbn = info.industryIdentifiers?.find(id => id.type === "ISBN_13")?.identifier
@@ -590,31 +601,91 @@ async function fetchBooks() {
         };
       });
 
-    if (books.length === 0) throw new Error("No suitable books found");
+    // Combine seed books with Google Books, deduplicate
+    const allBooks   = [...seedBooks, ...googleBooks];
+    const seen       = new Set();
+    const combined   = allBooks.filter(b => {
+      if (seen.has(b.title)) return false;
+      seen.add(b.title);
+      return true;
+    }).slice(0, 6);
+
+    const finalBooks = combined.length > 0 ? combined : seedBooks.slice(0, 6);
+
+    if (finalBooks.length === 0) throw new Error("No books found");
 
     loadingWrap.classList.add("hidden");
     subtitle.textContent = `Six books curated for your ${moodLabel} soul`;
-    renderBooks(books);
+    renderBooks(finalBooks);
 
   } catch (err) {
     console.error("Book fetch error:", err);
-    loadingWrap.innerHTML = `<p style="color:var(--pink-pale);font-family:var(--font-i);font-style:italic">Something went wrong while curating your list. Please try again.</p>`;
+    // Fallback to seed books if everything else fails
+    const fallback = typeof getSeededBooks === "function"
+      ? getSeededBooks(sel.genre, sel.mood)
+      : [];
+    if (fallback.length > 0) {
+      loadingWrap.classList.add("hidden");
+      subtitle.textContent = `Six books curated for your ${moodLabel} soul`;
+      renderBooks(fallback);
+    } else {
+      loadingWrap.innerHTML = `<p style="color:var(--pink-pale);font-family:var(--font-i);font-style:italic">Something went wrong while curating your list. Please try again.</p>`;
+    }
   }
 }
 
 function buildSearchQuery(genre, subgenre, mood) {
-  const moodKeywords = {
-    happy:       "uplifting feel good",
-    melancholic: "emotional heartbreaking",
-    adventurous: "adventure action exciting",
-    peaceful:    "gentle quiet cozy",
-    dark:        "dark suspense psychological",
-    hopeful:     "inspiring hopeful redemption",
-    romantic:    "romance love passionate",
-    curious:     "mystery fascinating discovery"
+  const subgenreMap = {
+    "Dark Romance":           "dark romance novel",
+    "Contemporary Romance":   "contemporary romance novel",
+    "Historical Romance":     "historical romance novel",
+    "Paranormal Romance":     "paranormal romance novel",
+    "Romantic Comedy":        "romantic comedy novel",
+    "Slow Burn":              "slow burn romance novel",
+    "Epic Fantasy":           "epic fantasy novel",
+    "Dark Fantasy":           "dark fantasy novel",
+    "Urban Fantasy":          "urban fantasy novel",
+    "Romantasy":              "fantasy romance novel",
+    "High Fantasy":           "high fantasy novel",
+    "Fae and Magic":          "fae fantasy novel",
+    "Cozy Mystery":           "cozy mystery novel",
+    "Noir Detective":         "noir detective novel",
+    "Psychological Mystery":  "psychological mystery novel",
+    "True Crime":             "true crime book",
+    "Locked Room":            "locked room mystery novel",
+    "Whodunit":               "whodunit mystery novel",
+    "Space Opera":            "space opera science fiction",
+    "Dystopian":              "dystopian fiction novel",
+    "Cyberpunk":              "cyberpunk science fiction",
+    "Hard Sci-Fi":            "hard science fiction novel",
+    "Time Travel":            "time travel fiction novel",
+    "AI and Robots":          "artificial intelligence fiction",
+    "Psychological Thriller": "psychological thriller novel",
+    "Legal Thriller":         "legal thriller novel",
+    "Political Thriller":     "political thriller novel",
+    "Domestic Thriller":      "domestic thriller novel",
+    "Espionage":              "espionage spy thriller",
+    "Medical Thriller":       "medical thriller novel",
+    "Character Study":        "literary fiction character",
+    "Experimental":           "experimental literary fiction",
+    "Coming of Age":          "coming of age novel",
+    "Family Saga":            "family saga fiction",
+    "Social Commentary":      "social commentary fiction",
+    "Philosophical":          "philosophical fiction novel",
+    "Medieval":               "medieval historical fiction",
+    "Victorian Era":          "victorian historical fiction",
+    "World Wars":             "world war historical fiction",
+    "Ancient Civilizations":  "ancient historical fiction",
+    "Renaissance":            "renaissance historical fiction",
+    "Colonial Era":           "colonial historical fiction",
+    "Memoir and Biography":   "memoir biography",
+    "Popular Science":        "popular science book",
+    "Psychology":             "psychology book",
+    "Philosophy":             "philosophy book",
+    "Self Development":       "self help book",
   };
-  const moodWord = moodKeywords[mood] || mood;
-  return `${subgenre} ${genre} ${moodWord} fiction`;
+  const searchTerm = subgenreMap[subgenre] || `${subgenre} ${genre}`;
+  return `subject:${genre} ${searchTerm} bestseller`;
 }
 
 // ─────────────────────────────────────────────
