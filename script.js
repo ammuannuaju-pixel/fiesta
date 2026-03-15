@@ -496,14 +496,13 @@ revealBtn.addEventListener("click", async () => {
 
   setupMusicBar(sel.genre);
   await fetchBooks();
-  if (currentUser) saveQuizResult(sel, []);
-  renderReaderTwins();
-  renderFeed();
-  enterReadingRoom(sel.genre, sel.mood);
-  triggerArchetypeCard();
-  triggerAuthModalIfNeeded();
+  if (typeof saveQuizResult === "function" && currentUser) saveQuizResult(sel, []);
+  if (typeof renderReaderTwins === "function") renderReaderTwins();
+  if (typeof renderFeed === "function") renderFeed();
+  if (typeof enterReadingRoom === "function") enterReadingRoom(sel.genre, sel.mood);
+  if (typeof triggerArchetypeCard === "function") triggerArchetypeCard();
+  if (typeof triggerAuthModalIfNeeded === "function") triggerAuthModalIfNeeded();
 });
-
 
 // ─────────────────────────────────────────────
 //  MUSIC PLAYER
@@ -604,59 +603,20 @@ async function fetchBooks() {
 }
 
 function buildSearchQuery(genre, subgenre, mood) {
-  const subgenreMap = {
-    "Dark Romance":           "dark romance novel",
-    "Contemporary Romance":   "contemporary romance novel",
-    "Historical Romance":     "historical romance novel",
-    "Paranormal Romance":     "paranormal romance novel",
-    "Romantic Comedy":        "romantic comedy novel",
-    "Slow Burn":              "slow burn romance novel",
-    "Epic Fantasy":           "epic fantasy novel",
-    "Dark Fantasy":           "dark fantasy novel",
-    "Urban Fantasy":          "urban fantasy novel",
-    "Romantasy":              "fantasy romance novel",
-    "High Fantasy":           "high fantasy novel",
-    "Fae and Magic":          "fae fantasy novel",
-    "Cozy Mystery":           "cozy mystery novel",
-    "Noir Detective":         "noir detective novel",
-    "Psychological Mystery":  "psychological mystery novel",
-    "True Crime":             "true crime book",
-    "Locked Room":            "locked room mystery novel",
-    "Whodunit":               "whodunit mystery novel",
-    "Space Opera":            "space opera science fiction",
-    "Dystopian":              "dystopian fiction novel",
-    "Cyberpunk":              "cyberpunk science fiction",
-    "Hard Sci-Fi":            "hard science fiction novel",
-    "Time Travel":            "time travel fiction novel",
-    "AI and Robots":          "artificial intelligence fiction",
-    "Psychological Thriller": "psychological thriller novel",
-    "Legal Thriller":         "legal thriller novel",
-    "Political Thriller":     "political thriller novel",
-    "Domestic Thriller":      "domestic thriller novel",
-    "Espionage":              "espionage spy thriller",
-    "Medical Thriller":       "medical thriller novel",
-    "Character Study":        "literary fiction character",
-    "Experimental":           "experimental literary fiction",
-    "Coming of Age":          "coming of age novel",
-    "Family Saga":            "family saga fiction",
-    "Social Commentary":      "social commentary fiction",
-    "Philosophical":          "philosophical fiction novel",
-    "Medieval":               "medieval historical fiction",
-    "Victorian Era":          "victorian historical fiction",
-    "World Wars":             "world war historical fiction",
-    "Ancient Civilizations":  "ancient historical fiction",
-    "Renaissance":            "renaissance historical fiction",
-    "Colonial Era":           "colonial historical fiction",
-    "Memoir and Biography":   "memoir biography",
-    "Popular Science":        "popular science book",
-    "Psychology":             "psychology book",
-    "Philosophy":             "philosophy book",
-    "Self Development":       "self help book",
+  const moodKeywords = {
+    happy:       "uplifting feel good",
+    melancholic: "emotional heartbreaking",
+    adventurous: "adventure action exciting",
+    peaceful:    "gentle quiet cozy",
+    dark:        "dark suspense psychological",
+    hopeful:     "inspiring hopeful redemption",
+    romantic:    "romance love passionate",
+    curious:     "mystery fascinating discovery"
   };
-
-  const searchTerm = subgenreMap[subgenre] || `${subgenre} ${genre}`;
-  return `subject:${genre} ${searchTerm} bestseller`;
+  const moodWord = moodKeywords[mood] || mood;
+  return `${subgenre} ${genre} ${moodWord} fiction`;
 }
+
 // ─────────────────────────────────────────────
 //  RENDER BOOKS
 // ─────────────────────────────────────────────
@@ -682,6 +642,8 @@ function renderBooks(books) {
       ? book.tags.map(t => `<span class="book-tag">${esc(t)}</span>`).join("")
       : "";
 
+    const annId = isbn || book.title.replace(/\s+/g, "_").slice(0, 40);
+
     const card = document.createElement("div");
     card.className = "book-card";
     card.style.animationDelay = `${i * 0.1}s`;
@@ -704,6 +666,26 @@ function renderBooks(books) {
         <div class="book-author">${esc(book.author)}${book.year ? ` &middot; ${esc(book.year)}` : ""}</div>
         <div class="book-desc">${esc(book.description)}</div>
         ${tagsHTML ? `<div class="book-tags">${tagsHTML}</div>` : ""}
+        <div class="annotation-section" id="ann-${esc(annId)}">
+          <div class="annotation-list" id="annlist-${esc(annId)}">
+            <div class="ann-loading">Loading reactions...</div>
+          </div>
+          <div class="annotation-input-wrap">
+            <input
+              type="text"
+              class="annotation-input"
+              placeholder="Leave a reaction..."
+              maxlength="150"
+              data-isbn="${esc(annId)}"
+              data-title="${esc(book.title)}"
+            />
+            <button
+              class="annotation-submit"
+              data-isbn="${esc(annId)}"
+              data-title="${esc(book.title)}"
+            >Post</button>
+          </div>
+        </div>
       </div>
     `;
 
@@ -712,7 +694,6 @@ function renderBooks(books) {
       const img = card.querySelector("img.book-cover");
       img.addEventListener("error", () => {
         const wrap = card.querySelector(".book-cover-wrap");
-        // Remove the broken img, insert fallback before overlay
         img.remove();
         const overlay = wrap.querySelector(".cover-overlay");
         wrap.insertBefore(createFallbackEl(book), overlay);
@@ -720,6 +701,35 @@ function renderBooks(books) {
     }
 
     grid.appendChild(card);
+
+    // Load annotations for this book
+    if (typeof loadAndRenderAnnotations === "function") {
+      loadAndRenderAnnotations(annId);
+    }
+
+    // Wire up the post button
+    const submitBtn = card.querySelector(".annotation-submit");
+    const inputEl   = card.querySelector(".annotation-input");
+
+    submitBtn.addEventListener("click", async () => {
+      const content = inputEl.value.trim();
+      if (!content) return;
+      submitBtn.disabled = true;
+      submitBtn.textContent = "Posting...";
+      if (typeof postAnnotation === "function") {
+        await postAnnotation(annId, book.title, content);
+      }
+      inputEl.value = "";
+      submitBtn.textContent = "Post";
+      submitBtn.disabled = false;
+      if (typeof loadAndRenderAnnotations === "function") {
+        loadAndRenderAnnotations(annId);
+      }
+    });
+
+    inputEl.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") submitBtn.click();
+    });
   });
 }
 

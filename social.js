@@ -323,3 +323,46 @@ function formatTime(iso) {
   if (diff < 86400000) return new Date(iso).toLocaleTimeString([], { hour:"2-digit", minute:"2-digit" });
   return new Date(iso).toLocaleDateString([], { month:"short", day:"numeric" });
 }
+// ─── LOAD AND RENDER ANNOTATIONS ──────────────
+
+async function loadAndRenderAnnotations(isbn) {
+  const listEl = document.getElementById(`annlist-${isbn}`);
+  if (!listEl) return;
+
+  const annotations = await getAnnotations(isbn);
+
+  if (!annotations.length) {
+    listEl.innerHTML = `<div class="ann-empty">No reactions yet. Be the first.</div>`;
+    return;
+  }
+
+  listEl.innerHTML = annotations.map(ann => `
+    <div class="ann-item">
+      <div class="ann-avatar" style="background:${seedToHsl(ann.profiles?.username || ann.user_id)}">
+        ${(ann.profiles?.username || "R")[0].toUpperCase()}
+      </div>
+      <div class="ann-body">
+        <div class="ann-user">${escHTML(ann.profiles?.username || "Reader")}</div>
+        <div class="ann-text">${escHTML(ann.content)}</div>
+        <div class="ann-meta">
+          <span class="ann-time">${formatTime(ann.created_at)}</span>
+          <button class="ann-upvote" data-id="${ann.id}" onclick="handleUpvote(this)">
+            ${ann.upvotes > 0 ? `+ ${ann.upvotes}` : "Resonate"}
+          </button>
+        </div>
+      </div>
+    </div>
+  `).join("");
+
+  // Subscribe to live new annotations
+  subscribeToAnnotations(isbn, (newAnn) => {
+    loadAndRenderAnnotations(isbn);
+  });
+}
+
+async function handleUpvote(btn) {
+  const id = btn.dataset.id;
+  btn.disabled = true;
+  btn.textContent = "Resonated";
+  await upvoteAnnotation(id);
+}
