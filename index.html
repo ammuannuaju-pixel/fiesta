@@ -19,7 +19,10 @@
   <nav id="mainNav">
     <div class="nav-brand">FIESTA</div>
     <div class="nav-tagline">Books for Every Soul</div>
-    <div id="navUser" style="display:none" class="nav-user"></div>
+    <div class="nav-right">
+      <div id="navStreak" class="nav-streak"></div>
+      <div id="navUser" style="display:none" class="nav-user"></div>
+    </div>
   </nav>
 
   <!-- ===================== HERO ===================== -->
@@ -131,6 +134,8 @@
 
     <div class="results-header">
       <div class="results-label">YOUR CURATED LIST</div>
+      <!-- Streak and Badges Panel -->
+      <div id="streakPanel" class="streak-panel-wrap"></div>
       <h2 id="resultsTitle">Books Chosen For Your Soul</h2>
       <p id="resultsSubtitle"></p>
     </div>
@@ -196,6 +201,7 @@
   <script src="social.js"></script>
   <script src="modal.js"></script>
   <script src="archetype.js"></script>
+  <script src="streaks.js"></script>
   <script src="recommendations.js"></script>
   <script src="script.js"></script>
   <!-- Username Modal -->

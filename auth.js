@@ -38,11 +38,22 @@ async function loadProfile(userId) {
   return data || null;
 }
 
-function updateNavForUser(profile) {
-  const navUser = document.getElementById("navUser");
-  if (!navUser || !profile) return;
-  navUser.textContent = profile.username;
-  navUser.style.display = "block";
+async function updateNavForUser(profile) {
+  const navUser   = document.getElementById("navUser");
+  const navStreak = document.getElementById("navStreak");
+
+  if (navUser && profile) {
+    navUser.textContent  = profile.username;
+    navUser.style.display = "block";
+  }
+
+  if (navStreak && typeof getStreak === "function") {
+    const streak = await getStreak();
+    if (streak && streak.current > 0) {
+      navStreak.textContent  = `${streak.current} day streak`;
+      navStreak.style.display = "block";
+    }
+  }
 }
 
 db.auth.onAuthStateChange(async (event, session) => {

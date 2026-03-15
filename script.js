@@ -497,6 +497,7 @@ revealBtn.addEventListener("click", async () => {
   setupMusicBar(sel.genre);
   await fetchBooks();
   if (typeof saveQuizResult === "function" && currentUser) saveQuizResult(sel, []);
+  if (typeof triggerStreakAndBadgeChecks === "function") triggerStreakAndBadgeChecks(sel.mood);
   if (typeof renderReaderTwins === "function") renderReaderTwins();
   if (typeof renderFeed === "function") renderFeed();
   if (typeof enterReadingRoom === "function") enterReadingRoom(sel.genre, sel.mood);
