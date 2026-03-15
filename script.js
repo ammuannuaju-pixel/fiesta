@@ -707,7 +707,8 @@ function renderBooks(books) {
 
   books.forEach((book, i) => {
     const isbn    = book.isbn ? String(book.isbn).replace(/[-\s]/g, "") : "";
-    const coverURL = book.cover || (isbn ? `https://covers.openlibrary.org/b/isbn/${isbn}-L.jpg` : "");
+    const coverURL = book.cover
+  || (isbn ? `https://covers.openlibrary.org/b/isbn/${isbn}-L.jpg` : "");
 
     const tagsHTML = Array.isArray(book.tags)
       ? book.tags.map(t => `<span class="book-tag">${esc(t)}</span>`).join("")
@@ -763,7 +764,41 @@ function renderBooks(books) {
     // Handle failed cover images
     if (coverURL) {
       const img = card.querySelector("img.book-cover");
-      img.addEventListener("error", () => {
+      let triedGoogle = false;
+
+      img.addEventListener("error", async () => {
+        // First fallback: try Google Books API cover
+        if (!triedGoogle && isbn) {
+          triedGoogle = true;
+          try {
+            const gbUrl = `https://www.googleapis.com/books/v1/volumes?q=isbn:${isbn}&maxResults=1`;
+            const res   = await fetch(gbUrl);
+            const dat   = await res.json();
+            const thumb = dat.items?.[0]?.volumeInfo?.imageLinks?.thumbnail?.replace("http://", "https://");
+            if (thumb) {
+              img.src = thumb;
+              return;
+            }
+          } catch (e) { /* silent fail */ }
+        }
+
+        // Second fallback: try title and author search on Google Books
+        if (!triedGoogle) {
+          triedGoogle = true;
+          try {
+            const q     = encodeURIComponent(`${book.title} ${book.author}`);
+            const gbUrl = `https://www.googleapis.com/books/v1/volumes?q=${q}&maxResults=1`;
+            const res   = await fetch(gbUrl);
+            const dat   = await res.json();
+            const thumb = dat.items?.[0]?.volumeInfo?.imageLinks?.thumbnail?.replace("http://", "https://");
+            if (thumb) {
+              img.src = thumb;
+              return;
+            }
+          } catch (e) { /* silent fail */ }
+        }
+
+        // Final fallback: show elegant text placeholder
         const wrap = card.querySelector(".book-cover-wrap");
         img.remove();
         const overlay = wrap.querySelector(".cover-overlay");
