@@ -4,10 +4,11 @@ async function loadProfilePage() {
   const params   = new URLSearchParams(window.location.search);
   const username = params.get("user");
 
-  // If no username in URL show own profile
-  // Re-fetch profile in case currentProfile is stale
+  // Safety check — loadProfile may not be ready yet
   if (!currentProfile && currentUser) {
-    currentProfile = await loadProfile(currentUser.id);
+    if (typeof loadProfile === "function") {
+      currentProfile = await loadProfile(currentUser.id);
+    }
   }
 
   const targetUsername = username || currentProfile?.username;
@@ -246,11 +247,15 @@ function renderProfileActivity(activity) {
 // ─── INIT ──────────────────────────────────────
 
 document.addEventListener("DOMContentLoaded", async () => {
-  // Wait for auth to fully initialize by polling currentUser
+  // Give auth.js time to initialize Supabase session
   let waited = 0;
-  while (!currentUser && waited < 5000) {
-    await new Promise(resolve => setTimeout(resolve, 200));
-    waited += 200;
+  while (!currentUser && waited < 6000) {
+    await new Promise(resolve => setTimeout(resolve, 300));
+    waited += 300;
   }
+
+  // One more safety delay
+  await new Promise(resolve => setTimeout(resolve, 200));
+
   loadProfilePage();
 });
