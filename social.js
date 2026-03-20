@@ -1,3 +1,5 @@
+// social.js — Social features: follows, feed, annotations, reading rooms
+
 // ─── FOLLOWS ───────────────────────────────────
 
 async function followUser(targetId) {
@@ -133,56 +135,193 @@ async function upvoteAnnotation(id) {
   await db.rpc("increment_upvote", { annotation_id: id });
 }
 
-// ─── READING ROOMS ─────────────────────────────
+function subscribeToAnnotations(isbn, onNew) {
+  db.channel(`annotations:${isbn}`)
+    .on("postgres_changes", {
+      event:  "INSERT",
+      schema: "public",
+      table:  "annotations",
+      filter: `book_isbn=eq.${isbn}`
+    }, payload => onNew(payload.new))
+    .subscribe();
+}
 
-let activeRoomId  = null;
-let activeChannel = null;
+// ─── READING ROOMS — ENHANCED ──────────────────
+
+let activeRoomId      = null;
+let activeChannel     = null;
+let presenceInterval  = null;
+let selectedMessageId = null;
+
+// ── Weekly discussion prompts ──────────────────
+
+const WEEKLY_PROMPTS = [
+  "What book changed the way you see the world?",
+  "Which fictional character feels most like a real friend to you?",
+  "What is a book you loved that you could never recommend to anyone else?",
+  "Which book did you finish in one sitting and why?",
+  "What is the saddest ending you have ever read?",
+  "Which author do you wish wrote more books?",
+  "What book do you think everyone should read before they turn 25?",
+  "Which world from a book would you most want to live in?",
+  "What is a book you hated but could not stop reading?",
+  "Which book made you laugh out loud in public?",
+  "What is the most beautiful sentence you have ever read?",
+  "Which book do you return to when you need comfort?",
+];
+
+function getWeeklyPrompt() {
+  const weekNumber = Math.floor(Date.now() / (1000 * 60 * 60 * 24 * 7));
+  return WEEKLY_PROMPTS[weekNumber % WEEKLY_PROMPTS.length];
+}
+
+// ── Enter room ─────────────────────────────────
 
 async function enterReadingRoom(genre, mood) {
-  const { data: existing } = await db.from("reading_rooms")
-    .select("*").eq("genre", genre).eq("mood", mood)
+  const { data: existing } = await db
+    .from("reading_rooms")
+    .select("*")
+    .eq("genre", genre)
+    .eq("mood", mood)
     .gt("expires_at", new Date().toISOString())
-    .order("created_at", { ascending: false }).limit(1);
+    .order("created_at", { ascending: false })
+    .limit(1);
 
   let room = existing?.[0] || null;
 
   if (!room) {
-    const { data: newRoom } = await db.from("reading_rooms")
-      .insert({ genre, mood }).select().single();
+    const { data: newRoom } = await db
+      .from("reading_rooms")
+      .insert({ genre, mood })
+      .select()
+      .single();
     room = newRoom;
   }
 
   if (!room) return;
+
   activeRoomId = room.id;
 
+  // Set weekly prompt
+  const promptEl = document.getElementById("promptText");
+  if (promptEl) promptEl.textContent = getWeeklyPrompt();
+
+  // Load messages and start live features
   const messages = await loadMessages(room.id);
   renderAllMessages(messages);
   subscribeToRoom(room.id);
+  updatePresence(room.id);
+  loadPresence(room.id);
+
+  // Update presence every 30 seconds
+  if (presenceInterval) clearInterval(presenceInterval);
+  presenceInterval = setInterval(() => {
+    updatePresence(room.id);
+    loadPresence(room.id);
+  }, 30000);
+
   showRoomUI(genre, mood);
 }
 
+// ── Presence ───────────────────────────────────
+
+async function updatePresence(roomId) {
+  if (!currentUser || !currentProfile) return;
+
+  await db.from("room_presence").upsert({
+    room_id:   roomId,
+    user_id:   currentUser.id,
+    username:  currentProfile.username,
+    last_seen: new Date().toISOString(),
+  }, { onConflict: "room_id,user_id" });
+}
+
+async function loadPresence(roomId) {
+  const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+
+  const { data } = await db
+    .from("room_presence")
+    .select("username, user_id")
+    .eq("room_id", roomId)
+    .gt("last_seen", fiveMinAgo)
+    .limit(12);
+
+  renderPresence(data || []);
+}
+
+function renderPresence(users) {
+  const container = document.getElementById("presenceAvatars");
+  if (!container) return;
+
+  if (!users.length) {
+    container.innerHTML = `<span class="presence-empty">Just you right now</span>`;
+    return;
+  }
+
+  container.innerHTML = users.map(u => {
+    const isMe    = u.user_id === currentUser?.id;
+    const initial = (u.username || "R")[0].toUpperCase();
+    const bg      = seedToHsl(u.user_id);
+    return `
+      <div
+        class="presence-avatar ${isMe ? "presence-me" : ""}"
+        style="background:${bg}"
+        title="${escHTML(u.username)}${isMe ? " (you)" : ""}"
+      >
+        ${initial}
+      </div>
+    `;
+  }).join("") +
+  `<span class="presence-count">${users.length} reader${users.length !== 1 ? "s" : ""}</span>`;
+}
+
+// ── Load messages ──────────────────────────────
+
 async function loadMessages(roomId) {
-  const { data } = await db.from("room_messages")
+  const { data } = await db
+    .from("room_messages")
     .select("id, content, created_at, user_id, profiles(username, avatar_seed)")
     .eq("room_id", roomId)
-    .order("created_at", { ascending: true }).limit(80);
+    .order("created_at", { ascending: true })
+    .limit(80);
   return data || [];
 }
 
+// ── Subscribe to live messages ─────────────────
+
 function subscribeToRoom(roomId) {
   if (activeChannel) db.removeChannel(activeChannel);
+
   activeChannel = db.channel(`room_messages_${roomId}`)
     .on("postgres_changes", {
-      event: "INSERT", schema: "public",
-      table: "room_messages", filter: `room_id=eq.${roomId}`
+      event:  "INSERT",
+      schema: "public",
+      table:  "room_messages",
+      filter: `room_id=eq.${roomId}`
     }, async (payload) => {
       if (payload.new.user_id === currentUser?.id) return;
-      const { data: profile } = await db.from("profiles")
-        .select("username, avatar_seed").eq("id", payload.new.user_id).single();
+      const { data: profile } = await db
+        .from("profiles")
+        .select("username, avatar_seed")
+        .eq("id", payload.new.user_id)
+        .single();
       renderSingleMessage({ ...payload.new, profiles: profile });
     })
-    .subscribe();
+    .subscribe((status) => {
+      const dot   = document.getElementById("connectionDot");
+      const label = document.querySelector(".connection-label");
+      if (!dot) return;
+      if (status === "SUBSCRIBED") {
+        dot.style.background = "#00e676";
+        if (label) label.textContent = "Live";
+      } else {
+        dot.style.background = "#ff1744";
+        if (label) label.textContent = "Connecting...";
+      }
+    });
 }
+
+// ── Send message ───────────────────────────────
 
 async function sendChatMessage(content) {
   const trimmed = content.trim();
@@ -190,17 +329,25 @@ async function sendChatMessage(content) {
   if (trimmed.length > 500) return;
 
   const optimistic = {
-    id: "opt_" + Date.now(), user_id: currentUser.id,
-    content: trimmed, created_at: new Date().toISOString(),
-    profiles: currentProfile
+    id:         "opt_" + Date.now(),
+    user_id:    currentUser.id,
+    content:    trimmed,
+    created_at: new Date().toISOString(),
+    profiles:   currentProfile
   };
   renderSingleMessage(optimistic);
   document.getElementById("chatInput").value = "";
 
-  const { error } = await db.from("room_messages")
-    .insert({ room_id: activeRoomId, user_id: currentUser.id, content: trimmed });
+  const { error } = await db.from("room_messages").insert({
+    room_id: activeRoomId,
+    user_id: currentUser.id,
+    content: trimmed
+  });
+
   if (error) document.getElementById(optimistic.id)?.remove();
 }
+
+// ── Render all messages ────────────────────────
 
 function renderAllMessages(messages) {
   const container = document.getElementById("chatMessages");
@@ -209,9 +356,12 @@ function renderAllMessages(messages) {
   messages.forEach(m => renderSingleMessage(m));
 }
 
+// ── Render single message ──────────────────────
+
 function renderSingleMessage(msg) {
   const container = document.getElementById("chatMessages");
   if (!container) return;
+
   const isMe    = msg.user_id === currentUser?.id;
   const name    = isMe ? "You" : (msg.profiles?.username || "Reader");
   const initial = name[0].toUpperCase();
@@ -219,20 +369,120 @@ function renderSingleMessage(msg) {
   const time    = formatTime(msg.created_at);
 
   const el = document.createElement("div");
-  el.id = msg.id;
+  el.id        = msg.id;
   el.className = `chat-message ${isMe ? "chat-mine" : "chat-theirs"}`;
   el.innerHTML = `
     <div class="chat-avatar" style="background:${bg}">${initial}</div>
     <div class="chat-bubble-wrap">
       <div class="chat-sender">${escHTML(name)}</div>
-      <div class="chat-bubble">${escHTML(msg.content)}</div>
+      <div class="chat-bubble" onclick="showReactionPicker('${msg.id}')">
+        ${escHTML(msg.content)}
+        <div class="chat-reactions" id="reactions-${msg.id}"></div>
+      </div>
       <div class="chat-time">${time}</div>
     </div>
   `;
+
   container.appendChild(el);
+
+  // Load reactions for this message
+  loadReactions(msg.id);
+
   const near = container.scrollHeight - container.scrollTop - container.clientHeight < 120;
   if (near) el.scrollIntoView({ behavior: "smooth", block: "end" });
 }
+
+// ── Reactions ──────────────────────────────────
+
+const REACTION_LABELS = {
+  love:  "Loved it",
+  fire:  "Fire",
+  mind:  "Mind blown",
+  cry:   "Made me cry",
+  agree: "Agreed",
+};
+
+const REACTION_DISPLAY = {
+  love:  "Love",
+  fire:  "Fire",
+  mind:  "Mind Blown",
+  cry:   "Cry",
+  agree: "Agree",
+};
+
+function showReactionPicker(messageId) {
+  selectedMessageId = messageId;
+  const picker = document.getElementById("reactionPicker");
+  if (!picker) return;
+
+  const msgEl = document.getElementById(messageId);
+  if (!msgEl) return;
+
+  const rect = msgEl.getBoundingClientRect();
+  picker.style.top  = (rect.top + window.scrollY - 55) + "px";
+  picker.style.left = Math.min(rect.left, window.innerWidth - 340) + "px";
+  picker.classList.toggle("hidden");
+
+  // Close picker when clicking elsewhere
+  setTimeout(() => {
+    document.addEventListener("click", closePicker, { once: true });
+  }, 10);
+}
+
+function closePicker(e) {
+  const picker = document.getElementById("reactionPicker");
+  if (picker && !picker.contains(e.target)) {
+    picker.classList.add("hidden");
+  }
+}
+
+async function addReaction(emoji) {
+  if (!selectedMessageId || !currentUser) return;
+
+  const picker = document.getElementById("reactionPicker");
+  if (picker) picker.classList.add("hidden");
+
+  const msgId = selectedMessageId;
+  selectedMessageId = null;
+
+  const { error } = await db.from("message_reactions").upsert({
+    message_id: msgId,
+    user_id:    currentUser.id,
+    emoji,
+  }, { onConflict: "message_id,user_id,emoji" });
+
+  if (!error) loadReactions(msgId);
+}
+
+async function loadReactions(messageId) {
+  const container = document.getElementById(`reactions-${messageId}`);
+  if (!container) return;
+
+  const { data } = await db
+    .from("message_reactions")
+    .select("emoji")
+    .eq("message_id", messageId);
+
+  if (!data || !data.length) {
+    container.innerHTML = "";
+    return;
+  }
+
+  const counts = {};
+  data.forEach(r => { counts[r.emoji] = (counts[r.emoji] || 0) + 1; });
+
+  container.innerHTML = Object.entries(counts).map(([emoji, count]) => `
+    <span
+      class="reaction-pill"
+      onclick="event.stopPropagation(); selectedMessageId='${messageId}'; addReaction('${emoji}')"
+      title="${REACTION_LABELS[emoji] || emoji}"
+    >
+      ${REACTION_DISPLAY[emoji] || emoji} ${count}
+    </span>
+  `).join("");
+}
+
+// ── Room UI ────────────────────────────────────
 
 function showRoomUI(genre, mood) {
   const wrap  = document.getElementById("readingRoomWrap");
@@ -295,7 +545,9 @@ async function renderFeed() {
           explored ${escHTML(item.genre)} while feeling ${escHTML(item.mood)}
         </div>
         <div class="feed-books">
-          ${(item.books || []).slice(0, 3).map(b => `<span class="feed-book-title">${escHTML(b.title)}</span>`).join("")}
+          ${(item.books || []).slice(0, 3).map(b =>
+            `<span class="feed-book-title">${escHTML(b.title)}</span>`
+          ).join("")}
         </div>
         <div class="feed-time">${formatTime(item.created_at)}</div>
       </div>
@@ -303,26 +555,6 @@ async function renderFeed() {
   `).join("");
 }
 
-// ─── UTILS ─────────────────────────────────────
-
-function seedToHsl(seed) {
-  let hash = 0;
-  for (let i = 0; i < Math.min((seed || "").length, 8); i++) hash += seed.charCodeAt(i);
-  return `hsl(${(hash % 60) + 290}, 65%, 22%)`;
-}
-
-function escHTML(str) {
-  if (!str) return "";
-  return String(str).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
-}
-
-function formatTime(iso) {
-  const diff = Date.now() - new Date(iso).getTime();
-  if (diff < 60000)    return "just now";
-  if (diff < 3600000)  return `${Math.floor(diff/60000)}m ago`;
-  if (diff < 86400000) return new Date(iso).toLocaleTimeString([], { hour:"2-digit", minute:"2-digit" });
-  return new Date(iso).toLocaleDateString([], { month:"short", day:"numeric" });
-}
 // ─── LOAD AND RENDER ANNOTATIONS ──────────────
 
 async function loadAndRenderAnnotations(isbn) {
@@ -354,25 +586,40 @@ async function loadAndRenderAnnotations(isbn) {
     </div>
   `).join("");
 
-  // Subscribe to live new annotations
-  subscribeToAnnotations(isbn, (newAnn) => {
-    loadAndRenderAnnotations(isbn);
-  });
+  subscribeToAnnotations(isbn, () => loadAndRenderAnnotations(isbn));
 }
 
 async function handleUpvote(btn) {
   const id = btn.dataset.id;
-  btn.disabled = true;
+  btn.disabled    = true;
   btn.textContent = "Resonated";
   await upvoteAnnotation(id);
 }
-function subscribeToAnnotations(isbn, onNew) {
-  db.channel(`annotations:${isbn}`)
-    .on("postgres_changes", {
-      event:  "INSERT",
-      schema: "public",
-      table:  "annotations",
-      filter: `book_isbn=eq.${isbn}`
-    }, payload => onNew(payload.new))
-    .subscribe();
+
+// ─── UTILS ─────────────────────────────────────
+
+function seedToHsl(seed) {
+  let hash = 0;
+  for (let i = 0; i < Math.min((seed || "").length, 8); i++) {
+    hash += seed.charCodeAt(i);
+  }
+  return `hsl(${(hash % 60) + 290}, 65%, 22%)`;
+}
+
+function escHTML(str) {
+  if (!str) return "";
+  return String(str)
+    .replace(/&/g,  "&amp;")
+    .replace(/</g,  "&lt;")
+    .replace(/>/g,  "&gt;")
+    .replace(/"/g,  "&quot;");
+}
+
+function formatTime(iso) {
+  if (!iso) return "";
+  const diff = Date.now() - new Date(iso).getTime();
+  if (diff < 60000)    return "just now";
+  if (diff < 3600000)  return `${Math.floor(diff / 60000)}m ago`;
+  if (diff < 86400000) return new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  return new Date(iso).toLocaleDateString([], { month: "short", day: "numeric" });
 }

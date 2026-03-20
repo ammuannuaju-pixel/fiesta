@@ -181,16 +181,70 @@
     <div class="social-section" id="feedContainer"></div>
 
     <!-- Reading Room -->
+    <!-- Reading Room -->
     <div class="reading-room hidden" id="readingRoomWrap">
+
+      <!-- Room Header -->
       <div class="room-header">
-        <div class="room-title" id="roomTitle"></div>
-        <div class="connection-dot" id="connectionDot"></div>
+        <div class="room-header-left">
+          <div class="room-title" id="roomTitle"></div>
+          <div class="room-subtitle">Reading Room</div>
+        </div>
+        <div class="room-header-right">
+          <div class="connection-indicator">
+            <div class="connection-dot" id="connectionDot"></div>
+            <span class="connection-label">Live</span>
+          </div>
+        </div>
       </div>
+
+      <!-- Online Users -->
+      <div class="room-presence" id="roomPresence">
+        <div class="presence-label">In this room</div>
+        <div class="presence-avatars" id="presenceAvatars"></div>
+      </div>
+
+      <!-- Pinned Book and Discussion Prompt -->
+      <div class="room-prompt-bar" id="roomPromptBar">
+        <div class="prompt-pin-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+            <path d="M12 2L8 8H3l4.5 4.5L6 20l6-4 6 4-1.5-7.5L21 8h-5L12 2z"/>
+          </svg>
+        </div>
+        <div class="prompt-content">
+          <div class="prompt-label">THIS WEEK'S PROMPT</div>
+          <div class="prompt-text" id="promptText"></div>
+        </div>
+      </div>
+
+      <!-- Messages -->
       <div class="chat-messages" id="chatMessages"></div>
-      <div class="chat-input-wrap">
-        <input type="text" id="chatInput" placeholder="Say something to your reading room..." maxlength="500" />
-        <button onclick="sendChatMessage(document.getElementById('chatInput').value)">Send</button>
+
+      <!-- Reaction Picker -->
+      <div class="reaction-picker hidden" id="reactionPicker">
+        <button onclick="addReaction('love')" title="Love">Love</button>
+        <button onclick="addReaction('fire')" title="Fire">Fire</button>
+        <button onclick="addReaction('mind')" title="Mind Blown">Mind Blown</button>
+        <button onclick="addReaction('cry')" title="Cry">Cry</button>
+        <button onclick="addReaction('agree')" title="Agree">Agree</button>
       </div>
+
+      <!-- Input -->
+      <div class="chat-input-wrap">
+        <input
+          type="text"
+          id="chatInput"
+          placeholder="Share your thoughts with the room..."
+          maxlength="500"
+        />
+        <button
+          class="chat-send-btn"
+          onclick="sendChatMessage(document.getElementById('chatInput').value)"
+        >
+          Send
+        </button>
+      </div>
+
     </div>
     <!-- Restart -->
     <div class="restart-row">
