@@ -366,3 +366,13 @@ async function handleUpvote(btn) {
   btn.textContent = "Resonated";
   await upvoteAnnotation(id);
 }
+function subscribeToAnnotations(isbn, onNew) {
+  db.channel(`annotations:${isbn}`)
+    .on("postgres_changes", {
+      event:  "INSERT",
+      schema: "public",
+      table:  "annotations",
+      filter: `book_isbn=eq.${isbn}`
+    }, payload => onNew(payload.new))
+    .subscribe();
+}
