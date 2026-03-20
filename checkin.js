@@ -11,47 +11,46 @@ const CHECKIN_MOODS = [
   { key: "curious",     label: "Intrigued",    color: "#DA70D6" },
 ];
 
-// One book recommendation per mood for the daily check-in
 const CHECKIN_BOOKS = {
   happy: [
-    { title: "The Hating Game",          author: "Sally Thorne",     isbn: "9780062439598" },
-    { title: "Beach Read",               author: "Emily Henry",      isbn: "9781984806734" },
-    { title: "The Unhoneymooners",       author: "Christina Lauren", isbn: "9781501128035" },
+    { title: "The Hating Game",          author: "Sally Thorne",      isbn: "9780062439598" },
+    { title: "Beach Read",               author: "Emily Henry",       isbn: "9781984806734" },
+    { title: "The Unhoneymooners",       author: "Christina Lauren",  isbn: "9781501128035" },
   ],
   melancholic: [
-    { title: "The Remains of the Day",   author: "Kazuo Ishiguro",   isbn: "9780679731726" },
-    { title: "A Little Life",            author: "Hanya Yanagihara", isbn: "9780804172706" },
-    { title: "Normal People",            author: "Sally Rooney",     isbn: "9780571334650" },
+    { title: "The Remains of the Day",   author: "Kazuo Ishiguro",    isbn: "9780679731726" },
+    { title: "A Little Life",            author: "Hanya Yanagihara",  isbn: "9780804172706" },
+    { title: "Normal People",            author: "Sally Rooney",      isbn: "9780571334650" },
   ],
   adventurous: [
-    { title: "Six of Crows",             author: "Leigh Bardugo",    isbn: "9781627792127" },
-    { title: "The Lies of Locke Lamora", author: "Scott Lynch",      isbn: "9780553588941" },
-    { title: "Dune",                     author: "Frank Herbert",    isbn: "9780441013593" },
+    { title: "Six of Crows",             author: "Leigh Bardugo",     isbn: "9781627792127" },
+    { title: "The Lies of Locke Lamora", author: "Scott Lynch",       isbn: "9780553588941" },
+    { title: "Dune",                     author: "Frank Herbert",     isbn: "9780441013593" },
   ],
   peaceful: [
-    { title: "A Gentleman in Moscow",    author: "Amor Towles",      isbn: "9780143110439" },
-    { title: "The House in the Cerulean Sea", author: "TJ Klune",   isbn: "9781250217318" },
-    { title: "84 Charing Cross Road",    author: "Helene Hanff",     isbn: "9780140143508" },
+    { title: "A Gentleman in Moscow",        author: "Amor Towles",   isbn: "9780143110439" },
+    { title: "The House in the Cerulean Sea", author: "TJ Klune",     isbn: "9781250217318" },
+    { title: "84 Charing Cross Road",        author: "Helene Hanff",  isbn: "9780140143508" },
   ],
   dark: [
-    { title: "Gone Girl",                author: "Gillian Flynn",    isbn: "9780307588371" },
-    { title: "The Poppy War",            author: "R.F. Kuang",       isbn: "9780062662590" },
-    { title: "Mexican Gothic",           author: "Silvia Moreno-Garcia", isbn: "9780525620785" },
+    { title: "Gone Girl",      author: "Gillian Flynn",           isbn: "9780307588371" },
+    { title: "The Poppy War",  author: "R.F. Kuang",              isbn: "9780062662590" },
+    { title: "Mexican Gothic", author: "Silvia Moreno-Garcia",    isbn: "9780525620785" },
   ],
   hopeful: [
-    { title: "Circe",                    author: "Madeline Miller",  isbn: "9780316556347" },
-    { title: "The Midnight Library",     author: "Matt Haig",        isbn: "9780525559474" },
-    { title: "Project Hail Mary",        author: "Andy Weir",        isbn: "9780593135204" },
+    { title: "Circe",                author: "Madeline Miller", isbn: "9780316556347" },
+    { title: "The Midnight Library", author: "Matt Haig",       isbn: "9780525559474" },
+    { title: "Project Hail Mary",    author: "Andy Weir",       isbn: "9780593135204" },
   ],
   romantic: [
-    { title: "The Night Circus",         author: "Erin Morgenstern", isbn: "9780385534635" },
-    { title: "The Song of Achilles",     author: "Madeline Miller",  isbn: "9780062060624" },
-    { title: "The Seven Husbands of Evelyn Hugo", author: "Taylor Jenkins Reid", isbn: "9781501161933" },
+    { title: "The Night Circus",                      author: "Erin Morgenstern",    isbn: "9780385534635" },
+    { title: "The Song of Achilles",                  author: "Madeline Miller",     isbn: "9780062060624" },
+    { title: "The Seven Husbands of Evelyn Hugo",     author: "Taylor Jenkins Reid", isbn: "9781501161933" },
   ],
   curious: [
-    { title: "The Name of the Wind",     author: "Patrick Rothfuss", isbn: "9780756404741" },
-    { title: "Sapiens",                  author: "Yuval Noah Harari", isbn: "9780062316097" },
-    { title: "Cloud Atlas",              author: "David Mitchell",   isbn: "9780375507250" },
+    { title: "The Name of the Wind", author: "Patrick Rothfuss",  isbn: "9780756404741" },
+    { title: "Sapiens",              author: "Yuval Noah Harari", isbn: "9780062316097" },
+    { title: "Cloud Atlas",          author: "David Mitchell",    isbn: "9780375507250" },
   ],
 };
 
@@ -87,8 +86,7 @@ async function saveCheckin(mood, bookTitle, bookAuthor) {
 
 function getDailyBookForMood(mood) {
   const books = CHECKIN_BOOKS[mood] || CHECKIN_BOOKS.curious;
-  // Pick deterministically based on date so it changes daily
-  const day = new Date().getDate();
+  const day   = new Date().getDate();
   return books[day % books.length];
 }
 
@@ -98,13 +96,13 @@ async function renderCheckinWidget() {
   const container = document.getElementById("checkinWidget");
   if (!container) return;
 
-  // Check if already checked in today
   const existing = await hasCheckedInToday();
 
   if (existing) {
     renderCheckinResult(container, existing.mood, {
       title:  existing.book_title,
       author: existing.book_author,
+      cover:  "",
     });
     return;
   }
@@ -135,7 +133,6 @@ async function handleCheckin(mood) {
   const container = document.getElementById("checkinWidget");
   if (!container) return;
 
-  // Show loading state
   container.innerHTML = `
     <div class="checkin-wrap checkin-loading">
       <div class="checkin-label">FINDING YOUR BOOK</div>
@@ -145,18 +142,33 @@ async function handleCheckin(mood) {
 
   const book = getDailyBookForMood(mood);
 
-  // Fetch cover from Google Books
+  // Use shared cover cache with a delay so it does not
+  // compete with other page load requests
   let cover = "";
-  if (book.isbn) {
+  await new Promise(r => setTimeout(r, 2000));
+
+  if (typeof fetchCoverWithCache === "function") {
+    cover = await fetchCoverWithCache(
+      book.isbn?.replace(/[-\s]/g, ""),
+      book.title,
+      book.author
+    );
+  } else {
     try {
-      if (typeof fetchCoverWithCache === "function") {
-        cover = await fetchCoverWithCache(book.isbn, book.title, "");
+      const cacheKey = `checkin_cover_${book.isbn || book.title}`;
+      const cached   = localStorage.getItem(cacheKey);
+      if (cached) {
+        cover = cached;
       } else {
-        await new Promise(r => setTimeout(r, 800));
-        const res = await fetch(`https://www.googleapis.com/books/v1/volumes?q=isbn:${book.isbn}&maxResults=1`);
+        await new Promise(r => setTimeout(r, 500));
+        const res = await fetch(
+          `https://www.googleapis.com/books/v1/volumes?q=isbn:${book.isbn}&maxResults=1`
+        );
         if (res.status !== 429) {
           const dat = await res.json();
-          cover = dat.items?.[0]?.volumeInfo?.imageLinks?.thumbnail?.replace("http://", "https://") || "";
+          cover = dat.items?.[0]?.volumeInfo?.imageLinks?.thumbnail
+            ?.replace("http://", "https://") || "";
+          if (cover) localStorage.setItem(cacheKey, cover);
         }
       }
     } catch (e) { /* silent */ }
@@ -181,12 +193,12 @@ function renderCheckinResult(container, mood, book) {
       </div>
       <div class="checkin-book">
         ${book.cover
-          ? `<img class="checkin-cover" src="${book.cover}" alt="${book.title}" />`
+          ? `<img class="checkin-cover" src="${book.cover}" alt="${book.title || ''}" onerror="this.style.display='none'" />`
           : `<div class="checkin-cover-fb"></div>`
         }
         <div class="checkin-book-info">
-          <div class="checkin-book-title">${escBOD(book.title)}</div>
-          <div class="checkin-book-author">${escBOD(book.author)}</div>
+          <div class="checkin-book-title">${book.title || ""}</div>
+          <div class="checkin-book-author">${book.author || ""}</div>
           <button class="checkin-explore-btn" onclick="startQuizWithMood('', '${mood}')">
             Explore More Like This
           </button>

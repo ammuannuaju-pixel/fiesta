@@ -1,8 +1,6 @@
 // bookofday.js — Book of the Day feature
 
 // ─── CURATED DAILY BOOKS ───────────────────────
-// One book per day cycling through this list
-// deterministically based on the date
 
 const DAILY_BOOKS = [
   { title: "The Name of the Wind", author: "Patrick Rothfuss", isbn: "9780756404741", genre: "fantasy", mood: "adventurous", description: "A legendary wizard recounts his extraordinary life from orphaned street performer to the most feared magician of his age. Lyrical, immersive, and impossible to put down.", tags: ["epic fantasy", "magic", "lyrical"] },
@@ -30,20 +28,20 @@ const DAILY_BOOKS = [
   { title: "A Little Life", author: "Hanya Yanagihara", isbn: "9780804172706", genre: "literary", mood: "dark", description: "Four college friends navigate life in New York over decades as one man's devastating past slowly and painfully comes fully to light.", tags: ["devastating", "friendship", "essential"] },
   { title: "Atomic Habits", author: "James Clear", isbn: "9780735211292", genre: "nonfiction", mood: "hopeful", description: "A practical and beautifully written framework for building good habits through tiny changes that compound into remarkable results over time.", tags: ["self help", "practical", "motivating"] },
   { title: "The Cruel Prince", author: "Holly Black", isbn: "9780316310314", genre: "fantasy", mood: "dark", description: "A mortal girl schemes to survive and eventually thrive in the treacherous and beautiful Faerie court in this dark and addictive series opener.", tags: ["fae", "YA", "dark romance"] },
-  { title: "Normal People", author: "Sally Rooney", isbn: "9780571334650", genre: "literary", mood: "curious", description: "A quietly devastating examination of how two people can be completely right for each other and still find every possible way to get it wrong.", tags: ["Irish", "literary", "contemporary"] },
   { title: "Mexican Gothic", author: "Silvia Moreno-Garcia", isbn: "9780525620785", genre: "mystery", mood: "dark", description: "A glamorous socialite travels to a crumbling Mexican mansion to rescue her cousin and discovers something ancient and deeply wrong with the house itself.", tags: ["gothic horror", "feminist", "atmospheric"] },
   { title: "The Song of Achilles", author: "Madeline Miller", isbn: "9780062060624", genre: "literary", mood: "romantic", description: "The story of Achilles and Patroclus told through the eyes of the prince who loved him in this heartbreaking retelling of the Iliad.", tags: ["mythology", "romance", "heartbreaking"] },
   { title: "Where the Crawdads Sing", author: "Delia Owens", isbn: "9780735224292", genre: "mystery", mood: "melancholic", description: "A girl abandoned in the North Carolina marshes raises herself alone and becomes entangled in a murder mystery that tests everything she has built.", tags: ["atmospheric", "nature", "mystery romance"] },
   { title: "The Poppy War", author: "R.F. Kuang", isbn: "9780062662590", genre: "fantasy", mood: "dark", description: "A war orphan aces the empire's most difficult exam and enters a prestigious military academy where she discovers a power that may destroy her.", tags: ["dark fantasy", "Chinese history", "brutal"] },
+  { title: "Klara and the Sun", author: "Kazuo Ishiguro", isbn: "9780571364879", genre: "scifi", mood: "melancholic", description: "An artificial friend observes the human world from a shop window and forms a profound bond with a sickly child in this quietly devastating novel.", tags: ["AI", "literary", "emotional"] },
 ];
 
 // ─── GET TODAY'S BOOK ──────────────────────────
 
 function getTodaysBook() {
-  const now      = new Date();
-  const start    = new Date(2024, 0, 1); // Jan 1 2024 as epoch
+  const now       = new Date();
+  const start     = new Date(2024, 0, 1);
   const daysSince = Math.floor((now - start) / (1000 * 60 * 60 * 24));
-  const index    = daysSince % DAILY_BOOKS.length;
+  const index     = daysSince % DAILY_BOOKS.length;
   return DAILY_BOOKS[index];
 }
 
@@ -53,33 +51,42 @@ async function renderBookOfDay() {
   const container = document.getElementById("bookOfDaySection");
   if (!container) return;
 
-  const book  = getTodaysBook();
-  const isbn  = book.isbn?.replace(/[-\s]/g, "") || "";
+  const book = getTodaysBook();
+  const isbn = book.isbn?.replace(/[-\s]/g, "") || "";
 
-  // Try to get cover from Google Books
+  // Use shared cover cache — delay to avoid competing with page load requests
   let cover = "";
-  // Use shared cover cache if available
+  await new Promise(r => setTimeout(r, 1500));
+
   if (typeof fetchCoverWithCache === "function") {
     cover = await fetchCoverWithCache(isbn, book.title, book.author);
   } else {
     try {
-      await new Promise(r => setTimeout(r, 500));
-      if (isbn) {
-        const res = await fetch(`https://www.googleapis.com/books/v1/volumes?q=isbn:${isbn}&maxResults=1`);
+      const cacheKey = `bod_cover_${isbn || book.title}`;
+      const cached   = localStorage.getItem(cacheKey);
+      if (cached) {
+        cover = cached;
+      } else if (isbn) {
+        await new Promise(r => setTimeout(r, 500));
+        const res = await fetch(
+          `https://www.googleapis.com/books/v1/volumes?q=isbn:${isbn}&maxResults=1`
+        );
         if (res.status !== 429) {
           const dat = await res.json();
-          cover = dat.items?.[0]?.volumeInfo?.imageLinks?.thumbnail?.replace("http://", "https://") || "";
+          cover = dat.items?.[0]?.volumeInfo?.imageLinks?.thumbnail
+            ?.replace("http://", "https://") || "";
+          if (cover) localStorage.setItem(cacheKey, cover);
         }
       }
     } catch (e) { /* silent */ }
   }
 
-  // Get how many hours until next book
-  const now         = new Date();
-  const tomorrow    = new Date(now);
+  // Get hours until next book
+  const now      = new Date();
+  const tomorrow = new Date(now);
   tomorrow.setDate(tomorrow.getDate() + 1);
   tomorrow.setHours(0, 0, 0, 0);
-  const hoursLeft   = Math.ceil((tomorrow - now) / (1000 * 60 * 60));
+  const hoursLeft = Math.ceil((tomorrow - now) / (1000 * 60 * 60));
 
   container.innerHTML = `
     <div class="bod-wrap">
@@ -90,7 +97,7 @@ async function renderBookOfDay() {
       <div class="bod-card">
         <div class="bod-cover-wrap">
           ${cover
-            ? `<img class="bod-cover" src="${escBOD(cover)}" alt="Cover of ${escBOD(book.title)}" />`
+            ? `<img class="bod-cover" src="${escBOD(cover)}" alt="Cover of ${escBOD(book.title)}" onerror="this.style.display='none'" />`
             : `<div class="bod-cover-fallback">
                 <div class="bod-fb-title">${escBOD(book.title)}</div>
                 <div class="bod-fb-author">${escBOD(book.author)}</div>
@@ -119,25 +126,24 @@ async function renderBookOfDay() {
     </div>
   `;
 
-  // Store current book globally for saving
   window.currentBookOfDay = { ...book, cover };
 }
 
 function escBOD(str) {
   if (!str) return "";
   return String(str)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
+    .replace(/&/g,  "&amp;")
+    .replace(/</g,  "&lt;")
+    .replace(/>/g,  "&gt;")
+    .replace(/"/g,  "&quot;")
+    .replace(/'/g,  "&#39;");
 }
 
 // ─── SAVE TO SHELF ────────────────────────────
 
 async function saveBookOfDay() {
   if (!currentUser) {
-    showAuthModal();
+    if (typeof showAuthModal === "function") showAuthModal();
     return;
   }
 
@@ -150,15 +156,15 @@ async function saveBookOfDay() {
   const { error } = await db
     .from("bookshelf")
     .upsert({
-      user_id:     currentUser.id,
-      title:       book.title,
-      author:      book.author,
-      isbn:        book.isbn || "",
-      cover:       book.cover || "",
-      genre:       book.genre,
-      mood:        book.mood,
-      source:      "book_of_day",
-      added_at:    new Date().toISOString()
+      user_id:  currentUser.id,
+      title:    book.title,
+      author:   book.author,
+      isbn:     book.isbn   || "",
+      cover:    book.cover  || "",
+      genre:    book.genre  || "",
+      mood:     book.mood   || "",
+      source:   "book_of_day",
+      added_at: new Date().toISOString()
     }, { onConflict: "user_id,title" });
 
   if (btn) {
@@ -170,10 +176,7 @@ async function saveBookOfDay() {
 // ─── START QUIZ WITH PRESET ───────────────────
 
 function startQuizWithMood(genre, mood) {
-  // Scroll to quiz
   document.getElementById("quiz")?.scrollIntoView({ behavior: "smooth" });
-
-  // Pre-select genre after a short delay
   setTimeout(() => {
     const genreBtn = document.querySelector(`#step1 .option-btn[data-value="${genre}"]`);
     if (genreBtn) genreBtn.click();
