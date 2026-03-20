@@ -543,6 +543,88 @@ function toggleMusic() {
 }
 
 // ─────────────────────────────────────────────
+//  COVER CACHE — avoids Google Books rate limits
+// ─────────────────────────────────────────────
+
+const COVER_CACHE_KEY = "fiesta_covers";
+const COVER_CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
+
+function getCachedCover(key) {
+  try {
+    const cache = JSON.parse(localStorage.getItem(COVER_CACHE_KEY) || "{}");
+    const entry = cache[key];
+    if (entry && Date.now() - entry.ts < COVER_CACHE_TTL) return entry.url;
+  } catch (e) { /* silent */ }
+  return null;
+}
+
+function setCachedCover(key, url) {
+  try {
+    const cache = JSON.parse(localStorage.getItem(COVER_CACHE_KEY) || "{}");
+    cache[key]  = { url, ts: Date.now() };
+    const keys  = Object.keys(cache);
+    if (keys.length > 100) delete cache[keys[0]];
+    localStorage.setItem(COVER_CACHE_KEY, JSON.stringify(cache));
+  } catch (e) { /* silent */ }
+}
+
+async function fetchCoverWithCache(isbn, title, author) {
+  const cacheKey = isbn || title;
+  const cached   = getCachedCover(cacheKey);
+  if (cached) return cached;
+
+  await new Promise(r => setTimeout(r, 300));
+
+  let cover = "";
+
+  if (isbn) {
+    try {
+      const res = await fetch(
+        `https://www.googleapis.com/books/v1/volumes?q=isbn:${isbn}&maxResults=1`
+      );
+      if (res.status === 429) return "";
+      const dat = await res.json();
+      cover = dat.items?.[0]?.volumeInfo?.imageLinks?.thumbnail
+        ?.replace("http://", "https://") || "";
+    } catch (e) { /* silent */ }
+  }
+
+  if (!cover) {
+    try {
+      await new Promise(r => setTimeout(r, 300));
+      const q   = encodeURIComponent(`intitle:${title} inauthor:${author}`);
+      const res = await fetch(
+        `https://www.googleapis.com/books/v1/volumes?q=${q}&maxResults=1`
+      );
+      if (res.status === 429) return "";
+      const dat = await res.json();
+      cover = dat.items?.[0]?.volumeInfo?.imageLinks?.thumbnail
+        ?.replace("http://", "https://") || "";
+    } catch (e) { /* silent */ }
+  }
+
+  if (cover) setCachedCover(cacheKey, cover);
+  return cover;
+}
+
+async function enrichBooksWithCovers(books) {
+  const enriched = [];
+  for (const book of books) {
+    if (book.cover) {
+      enriched.push(book);
+      continue;
+    }
+    const cover = await fetchCoverWithCache(
+      book.isbn?.replace(/[-\s]/g, ""),
+      book.title,
+      book.author
+    );
+    enriched.push({ ...book, cover });
+  }
+  return enriched;
+}
+
+// ─────────────────────────────────────────────
 //  FETCH BOOKS — CURATED + GOOGLE BOOKS
 // ─────────────────────────────────────────────
 
@@ -567,9 +649,10 @@ async function fetchBooks() {
 
     // If we have 6 good seed books use them directly
     if (seedBooks.length >= 6) {
+      const enriched = await enrichBooksWithCovers(seedBooks);
       loadingWrap.classList.add("hidden");
       subtitle.textContent = `Six books curated for your ${moodLabel} soul`;
-      renderBooks(seedBooks);
+      renderBooks(enriched);
       if (typeof initBookTrailers === "function") setTimeout(initBookTrailers, 100);
       return;
     }
@@ -615,9 +698,11 @@ async function fetchBooks() {
 
     if (finalBooks.length === 0) throw new Error("No books found");
 
+    const enrichedFinal = await enrichBooksWithCovers(finalBooks);
+
     loadingWrap.classList.add("hidden");
     subtitle.textContent = `Six books curated for your ${moodLabel} soul`;
-    renderBooks(finalBooks);
+    renderBooks(enrichedFinal);
     if (typeof initBookTrailers === "function") setTimeout(initBookTrailers, 100);
 
   } catch (err) {
@@ -627,9 +712,10 @@ async function fetchBooks() {
       ? getSeededBooks(sel.genre, sel.mood)
       : [];
     if (fallback.length > 0) {
+      const enrichedFallback = await enrichBooksWithCovers(fallback);
       loadingWrap.classList.add("hidden");
       subtitle.textContent = `Six books curated for your ${moodLabel} soul`;
-      renderBooks(fallback);
+      renderBooks(enrichedFallback);
       if (typeof initBookTrailers === "function") setTimeout(initBookTrailers, 100);
     } else {
       loadingWrap.innerHTML = `<p style="color:var(--pink-pale);font-family:var(--font-i);font-style:italic">Something went wrong while curating your list. Please try again.</p>`;

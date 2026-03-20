@@ -149,9 +149,16 @@ async function handleCheckin(mood) {
   let cover = "";
   if (book.isbn) {
     try {
-      const res = await fetch(`https://www.googleapis.com/books/v1/volumes?q=isbn:${book.isbn}&maxResults=1`);
-      const dat = await res.json();
-      cover = dat.items?.[0]?.volumeInfo?.imageLinks?.thumbnail?.replace("http://", "https://") || "";
+      if (typeof fetchCoverWithCache === "function") {
+        cover = await fetchCoverWithCache(book.isbn, book.title, "");
+      } else {
+        await new Promise(r => setTimeout(r, 800));
+        const res = await fetch(`https://www.googleapis.com/books/v1/volumes?q=isbn:${book.isbn}&maxResults=1`);
+        if (res.status !== 429) {
+          const dat = await res.json();
+          cover = dat.items?.[0]?.volumeInfo?.imageLinks?.thumbnail?.replace("http://", "https://") || "";
+        }
+      }
     } catch (e) { /* silent */ }
   }
 

@@ -58,20 +58,19 @@ async function renderBookOfDay() {
 
   // Try to get cover from Google Books
   let cover = "";
-  if (isbn) {
+  // Use shared cover cache if available
+  if (typeof fetchCoverWithCache === "function") {
+    cover = await fetchCoverWithCache(isbn, book.title, book.author);
+  } else {
     try {
-      const res   = await fetch(`https://www.googleapis.com/books/v1/volumes?q=isbn:${isbn}&maxResults=1`);
-      const dat   = await res.json();
-      cover = dat.items?.[0]?.volumeInfo?.imageLinks?.thumbnail?.replace("http://", "https://") || "";
-    } catch (e) { /* silent */ }
-  }
-
-  if (!cover) {
-    try {
-      const q   = encodeURIComponent(`intitle:${book.title} inauthor:${book.author}`);
-      const res = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${q}&maxResults=1`);
-      const dat = await res.json();
-      cover = dat.items?.[0]?.volumeInfo?.imageLinks?.thumbnail?.replace("http://", "https://") || "";
+      await new Promise(r => setTimeout(r, 500));
+      if (isbn) {
+        const res = await fetch(`https://www.googleapis.com/books/v1/volumes?q=isbn:${isbn}&maxResults=1`);
+        if (res.status !== 429) {
+          const dat = await res.json();
+          cover = dat.items?.[0]?.volumeInfo?.imageLinks?.thumbnail?.replace("http://", "https://") || "";
+        }
+      }
     } catch (e) { /* silent */ }
   }
 
