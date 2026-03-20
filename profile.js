@@ -1,12 +1,21 @@
 // profile.js — Public profile page logic
 
 async function loadProfilePage() {
-  // Get username from URL: profile.html?user=username
   const params   = new URLSearchParams(window.location.search);
   const username = params.get("user");
 
   // If no username in URL show own profile
+  // Re-fetch profile in case currentProfile is stale
+  if (!currentProfile && currentUser) {
+    currentProfile = await loadProfile(currentUser.id);
+  }
+
   const targetUsername = username || currentProfile?.username;
+```
+
+
+```
+https://yoursite.pages.dev/profile.html
 
   if (!targetUsername) {
     document.getElementById("profileHeader").innerHTML = `
@@ -237,7 +246,11 @@ function renderProfileActivity(activity) {
 // ─── INIT ──────────────────────────────────────
 
 document.addEventListener("DOMContentLoaded", async () => {
-  // Wait for auth to initialize
-  await new Promise(resolve => setTimeout(resolve, 800));
+  // Wait for auth to fully initialize by polling currentUser
+  let waited = 0;
+  while (!currentUser && waited < 5000) {
+    await new Promise(resolve => setTimeout(resolve, 200));
+    waited += 200;
+  }
   loadProfilePage();
 });
