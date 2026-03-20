@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fiesta — Reader Profile</title>
+  <link rel="stylesheet" href="styles.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+SC:wght@300;400;600;700&family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Jost:wght@200;300;400;500&display=swap" rel="stylesheet" />
+</head>
+<body>
+
+  <canvas id="seasonalCanvas"></canvas>
+
+  <nav id="mainNav">
+    <a href="index.html" class="nav-brand">FIESTA</a>
+    <div class="nav-tagline">Books for Every Soul</div>
+    <div class="nav-right">
+      <div id="navStreak" class="nav-streak"></div>
+      <div id="navUser" style="display:none" class="nav-user"></div>
+    </div>
+  </nav>
+
+  <main class="profile-page">
+
+    <!-- Profile Header -->
+    <div class="profile-header" id="profileHeader">
+      <div class="profile-loading">Loading profile...</div>
+    </div>
+
+    <!-- Stats Row -->
+    <div class="profile-stats" id="profileStats"></div>
+
+    <!-- Badges -->
+    <div class="profile-section">
+      <div class="profile-section-label">BADGES EARNED</div>
+      <div id="profileBadges" class="profile-badges-grid"></div>
+    </div>
+
+    <!-- Bookshelf -->
+    <div class="profile-section">
+      <div class="profile-section-label">BOOKSHELF</div>
+      <div id="profileShelf" class="profile-shelf-grid"></div>
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="profile-section">
+      <div class="profile-section-label">RECENT EXPLORATIONS</div>
+      <div id="profileActivity" class="profile-activity"></div>
+    </div>
+
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="supabase.js"></script>
+  <script src="auth.js"></script>
+  <script src="social.js"></script>
+  <script src="streaks.js"></script>
+  <script src="profile.js"></script>
+</body>
+</html>

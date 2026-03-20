@@ -497,7 +497,6 @@ revealBtn.addEventListener("click", async () => {
   setupMusicBar(sel.genre);
   await fetchBooks();
   if (typeof saveQuizResult === "function" && currentUser) saveQuizResult(sel, []);
-  if (typeof triggerStreakAndBadgeChecks === "function") triggerStreakAndBadgeChecks(sel.mood);
   if (typeof renderReaderTwins === "function") renderReaderTwins();
   if (typeof renderFeed === "function") renderFeed();
   if (typeof enterReadingRoom === "function") enterReadingRoom(sel.genre, sel.mood);
@@ -708,8 +707,7 @@ function renderBooks(books) {
 
   books.forEach((book, i) => {
     const isbn    = book.isbn ? String(book.isbn).replace(/[-\s]/g, "") : "";
-    const coverURL = book.cover
-  || (isbn ? `https://covers.openlibrary.org/b/isbn/${isbn}-L.jpg` : "");
+    const coverURL = book.cover || (isbn ? `https://covers.openlibrary.org/b/isbn/${isbn}-L.jpg` : "");
 
     const tagsHTML = Array.isArray(book.tags)
       ? book.tags.map(t => `<span class="book-tag">${esc(t)}</span>`).join("")
@@ -739,6 +737,15 @@ function renderBooks(books) {
         <div class="book-author">${esc(book.author)}${book.year ? ` &middot; ${esc(book.year)}` : ""}</div>
         <div class="book-desc">${esc(book.description)}</div>
         ${tagsHTML ? `<div class="book-tags">${tagsHTML}</div>` : ""}
+        <button class="save-to-shelf-btn"
+          data-title="${esc(book.title)}"
+          data-author="${esc(book.author)}"
+          data-isbn="${esc(isbn)}"
+          data-genre="${esc(sel.genre || '')}"
+          data-mood="${esc(sel.mood || '')}"
+          data-cover="${esc(book.cover || '')}">
+          Save to Shelf
+        </button>
         <div class="annotation-section" id="ann-${esc(annId)}">
           <div class="annotation-list" id="annlist-${esc(annId)}">
             <div class="ann-loading">Loading reactions...</div>
@@ -765,41 +772,7 @@ function renderBooks(books) {
     // Handle failed cover images
     if (coverURL) {
       const img = card.querySelector("img.book-cover");
-      let triedGoogle = false;
-
-      img.addEventListener("error", async () => {
-        // First fallback: try Google Books API cover
-        if (!triedGoogle && isbn) {
-          triedGoogle = true;
-          try {
-            const gbUrl = `https://www.googleapis.com/books/v1/volumes?q=isbn:${isbn}&maxResults=1`;
-            const res   = await fetch(gbUrl);
-            const dat   = await res.json();
-            const thumb = dat.items?.[0]?.volumeInfo?.imageLinks?.thumbnail?.replace("http://", "https://");
-            if (thumb) {
-              img.src = thumb;
-              return;
-            }
-          } catch (e) { /* silent fail */ }
-        }
-
-        // Second fallback: try title and author search on Google Books
-        if (!triedGoogle) {
-          triedGoogle = true;
-          try {
-            const q     = encodeURIComponent(`${book.title} ${book.author}`);
-            const gbUrl = `https://www.googleapis.com/books/v1/volumes?q=${q}&maxResults=1`;
-            const res   = await fetch(gbUrl);
-            const dat   = await res.json();
-            const thumb = dat.items?.[0]?.volumeInfo?.imageLinks?.thumbnail?.replace("http://", "https://");
-            if (thumb) {
-              img.src = thumb;
-              return;
-            }
-          } catch (e) { /* silent fail */ }
-        }
-
-        // Final fallback: show elegant text placeholder
+      img.addEventListener("error", () => {
         const wrap = card.querySelector(".book-cover-wrap");
         img.remove();
         const overlay = wrap.querySelector(".cover-overlay");
@@ -837,6 +810,29 @@ function renderBooks(books) {
     inputEl.addEventListener("keydown", (e) => {
       if (e.key === "Enter") submitBtn.click();
     });
+
+    // Wire up save to shelf button
+    const saveBtn = card.querySelector(".save-to-shelf-btn");
+    if (saveBtn) {
+      saveBtn.addEventListener("click", async () => {
+        if (!currentUser) { if (typeof showAuthModal === "function") showAuthModal(); return; }
+        saveBtn.disabled = true;
+        saveBtn.textContent = "Saving...";
+        const { error } = await db.from("bookshelf").upsert({
+          user_id: currentUser.id,
+          title:   saveBtn.dataset.title,
+          author:  saveBtn.dataset.author,
+          isbn:    saveBtn.dataset.isbn || "",
+          cover:   saveBtn.dataset.cover || "",
+          genre:   saveBtn.dataset.genre || "",
+          mood:    saveBtn.dataset.mood  || "",
+          source:  "quiz",
+          added_at: new Date().toISOString()
+        }, { onConflict: "user_id,title" });
+        saveBtn.textContent = error ? "Failed" : "Saved";
+      });
+    }
+
   });
 }
 
@@ -901,6 +897,12 @@ function init() {
 
   revealBtn.disabled = true;
   goToStep(1);
+
+  // Load Book of the Day and Check-in after auth initializes
+  setTimeout(() => {
+    if (typeof renderBookOfDay     === "function") renderBookOfDay();
+    if (typeof renderCheckinWidget === "function") renderCheckinWidget();
+  }, 1000);
 }
 
 window.addEventListener("resize", () => {
