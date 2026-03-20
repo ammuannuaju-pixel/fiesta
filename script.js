@@ -501,6 +501,7 @@ revealBtn.addEventListener("click", async () => {
   if (typeof renderFeed === "function") renderFeed();
   if (typeof enterReadingRoom === "function") enterReadingRoom(sel.genre, sel.mood);
   if (typeof triggerArchetypeCard === "function") triggerArchetypeCard();
+  if (typeof loadChatHistory === "function" && chatHistoryOpen) loadChatHistory();
   if (typeof triggerAuthModalIfNeeded === "function") triggerAuthModalIfNeeded();
 });
 

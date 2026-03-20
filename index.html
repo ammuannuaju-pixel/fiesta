@@ -246,6 +246,19 @@
       </div>
 
     </div>
+    <!-- Chat History -->
+    <div class="chat-history-section" id="chatHistorySection">
+      <div class="chat-history-header">
+        <div class="chat-history-label">YOUR READING ROOM HISTORY</div>
+        <button class="chat-history-toggle" onclick="toggleChatHistory()">Show</button>
+      </div>
+      <div class="chat-history-content hidden" id="chatHistoryContent">
+        <div class="chat-history-loading" id="chatHistoryLoading">
+          <div class="loader-ring"></div>
+        </div>
+        <div class="chat-history-list" id="chatHistoryList"></div>
+      </div>
+    </div>
     <!-- Restart -->
     <div class="restart-row">
       <button class="restart-btn" id="restartBtn">Start Over</button>
