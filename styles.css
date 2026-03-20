@@ -2285,3 +2285,136 @@ body {
   color: var(--pink);
   text-decoration: none;
 }
+.save-to-shelf-btn {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-3);
+  padding: 0.4rem 0.85rem;
+  font-family: var(--font-b);
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  margin: 0.6rem 0;
+  display: block;
+  width: 100%;
+}
+
+.save-to-shelf-btn:hover:not(:disabled) {
+  border-color: var(--border-2);
+  color: var(--pink-pale);
+  background: var(--pink-ghost);
+}
+
+.save-to-shelf-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+/* ===== BOOK TRAILER ===== */
+
+.trailer-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.96);
+  z-index: 5000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  gap: 1.2rem;
+}
+
+.trailer-ui {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: min(700px, 92vw);
+}
+
+.trailer-close {
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.15);
+  color: rgba(255,255,255,0.45);
+  padding: 0.4rem 1rem;
+  font-family: var(--font-b);
+  font-size: 0.72rem;
+  letter-spacing: 0.15em;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.trailer-close:hover {
+  border-color: var(--pink);
+  color: var(--pink);
+}
+
+.trailer-hint {
+  font-family: var(--font-i);
+  font-style: italic;
+  font-size: 0.72rem;
+  color: rgba(255,255,255,0.25);
+  letter-spacing: 0.04em;
+}
+
+.trailer-canvas {
+  display: block;
+  max-width: min(700px, 92vw);
+  max-height: min(700px, 92vw);
+  border: 1px solid rgba(255,255,255,0.06);
+  box-shadow: 0 0 80px rgba(0,0,0,0.8);
+}
+
+.trailer-controls {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.trailer-replay,
+.trailer-download {
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.15);
+  color: rgba(255,255,255,0.5);
+  padding: 0.5rem 1.2rem;
+  font-family: var(--font-b);
+  font-size: 0.75rem;
+  letter-spacing: 0.12em;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.trailer-replay:hover {
+  border-color: rgba(255,255,255,0.4);
+  color: rgba(255,255,255,0.8);
+}
+
+.trailer-download {
+  border-color: var(--pink);
+  color: var(--pink);
+}
+
+.trailer-download:hover {
+  background: var(--pink-ghost);
+}
+
+.trailer-btn {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-3);
+  padding: 0.4rem 0.85rem;
+  font-family: var(--font-b);
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  margin: 0.4rem 0 0;
+  display: block;
+  width: 100%;
+}
+
+.trailer-btn:hover {
+  border-color: var(--pink);
+  color: var(--pink);
+  background: var(--pink-ghost);
+}
