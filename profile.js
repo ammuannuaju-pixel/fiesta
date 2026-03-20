@@ -4,7 +4,7 @@ async function loadProfilePage() {
   const params   = new URLSearchParams(window.location.search);
   const username = params.get("user");
 
-  // Safety check — loadProfile may not be ready yet
+  // Re-fetch profile in case currentProfile is stale
   if (!currentProfile && currentUser) {
     if (typeof loadProfile === "function") {
       currentProfile = await loadProfile(currentUser.id);
@@ -12,32 +12,31 @@ async function loadProfilePage() {
   }
 
   const targetUsername = username || currentProfile?.username;
-```
-
-
-```
-https://yoursite.pages.dev/profile.html
 
   if (!targetUsername) {
     document.getElementById("profileHeader").innerHTML = `
       <div class="profile-error">
-        No profile found. <a href="index.html">Return home</a>
+        No profile found. Complete a quiz first then visit this page.
+        <br><br>
+        <a href="index.html">Return home</a>
       </div>
     `;
     return;
   }
 
   // Fetch profile by username
-  const { data: profile } = await db
+  const { data: profile, error } = await db
     .from("profiles")
     .select("*")
     .eq("username", targetUsername)
     .maybeSingle();
 
-  if (!profile) {
+  if (error || !profile) {
     document.getElementById("profileHeader").innerHTML = `
       <div class="profile-error">
-        Profile not found. <a href="index.html">Return home</a>
+        Profile not found for "${targetUsername}".
+        <br><br>
+        <a href="index.html">Return home</a>
       </div>
     `;
     return;
@@ -45,7 +44,7 @@ https://yoursite.pages.dev/profile.html
 
   const isOwnProfile = currentUser?.id === profile.id;
 
-  // Render header
+  // Render header first so page feels responsive
   renderProfileHeader(profile, isOwnProfile);
 
   // Load all data in parallel
@@ -113,8 +112,10 @@ async function getQuizCountForUser(userId) {
 // ─── RENDERERS ─────────────────────────────────
 
 function renderProfileHeader(profile, isOwnProfile) {
-  const initials  = profile.username[0].toUpperCase();
-  const bgColor   = seedToHsl(profile.avatar_seed || profile.id);
+  const initials = profile.username[0].toUpperCase();
+  const bgColor  = typeof seedToHsl === "function"
+    ? seedToHsl(profile.avatar_seed || profile.id)
+    : "#3a0a2a";
 
   document.getElementById("profileHeader").innerHTML = `
     <div class="profile-hero">
@@ -123,20 +124,27 @@ function renderProfileHeader(profile, isOwnProfile) {
       </div>
       <div class="profile-hero-info">
         <div class="profile-username">${escHTML(profile.username)}</div>
-        <div class="profile-joined">Reader since ${new Date(profile.created_at).toLocaleDateString("en-US", { month: "long", year: "numeric" })}</div>
-        ${isOwnProfile ? `
-          <button class="profile-edit-btn" onclick="showUsernameModal()">Edit Profile</button>
-        ` : `
-          <button class="profile-follow-btn" id="profileFollowBtn" data-uid="${profile.id}" onclick="handleFollowClick(this)">
-            Follow
-          </button>
-        `}
+        <div class="profile-joined">
+          Reader since ${new Date(profile.created_at).toLocaleDateString("en-US", {
+            month: "long", year: "numeric"
+          })}
+        </div>
+        ${isOwnProfile
+          ? `<button class="profile-edit-btn" onclick="showUsernameEdit()">Edit Username</button>`
+          : `<button
+               class="profile-follow-btn"
+               id="profileFollowBtn"
+               data-uid="${profile.id}"
+               onclick="handleFollowClick(this)">
+               Follow
+             </button>`
+        }
       </div>
     </div>
   `;
 
-  // Check follow status if viewing another profile
-  if (!isOwnProfile) {
+  // Check follow status for other profiles
+  if (!isOwnProfile && typeof isFollowing === "function") {
     isFollowing(profile.id).then(following => {
       const btn = document.getElementById("profileFollowBtn");
       if (btn && following) {
@@ -148,7 +156,10 @@ function renderProfileHeader(profile, isOwnProfile) {
 }
 
 function renderProfileStats(streak, quizCount, shelfCount) {
-  document.getElementById("profileStats").innerHTML = `
+  const container = document.getElementById("profileStats");
+  if (!container) return;
+
+  container.innerHTML = `
     <div class="profile-stats-row">
       <div class="profile-stat">
         <div class="profile-stat-number">${streak?.current || 0}</div>
@@ -172,18 +183,29 @@ function renderProfileStats(streak, quizCount, shelfCount) {
 
 function renderProfileBadges(badges) {
   const container = document.getElementById("profileBadges");
+  if (!container) return;
+
   if (!badges.length) {
-    container.innerHTML = `<p class="profile-empty">No badges earned yet. Complete quizzes to unlock badges.</p>`;
+    container.innerHTML = `
+      <p class="profile-empty">
+        No badges earned yet. Complete quizzes to unlock badges.
+      </p>
+    `;
     return;
   }
 
   container.innerHTML = badges.map(b => {
-    const def = BADGE_DEFINITIONS?.[b.badge_key];
+    const def = typeof BADGE_DEFINITIONS !== "undefined"
+      ? BADGE_DEFINITIONS[b.badge_key]
+      : null;
     if (!def) return "";
+    const iconSVG = typeof getBadgeIconSVG === "function"
+      ? getBadgeIconSVG(def.icon)
+      : "";
     return `
-      <div class="badge-item" title="${def.desc}">
-        <div class="badge-icon">${getBadgeIconSVG(def.icon)}</div>
-        <div class="badge-name">${def.label}</div>
+      <div class="badge-item" title="${escHTML(def.desc)}">
+        <div class="badge-icon">${iconSVG}</div>
+        <div class="badge-name">${escHTML(def.label)}</div>
       </div>
     `;
   }).join("");
@@ -191,8 +213,14 @@ function renderProfileBadges(badges) {
 
 function renderProfileShelf(shelf) {
   const container = document.getElementById("profileShelf");
+  if (!container) return;
+
   if (!shelf.length) {
-    container.innerHTML = `<p class="profile-empty">No books saved yet. Complete a quiz and save books to your shelf.</p>`;
+    container.innerHTML = `
+      <p class="profile-empty">
+        No books saved yet. Complete a quiz and save books to your shelf.
+      </p>
+    `;
     return;
   }
 
@@ -201,15 +229,24 @@ function renderProfileShelf(shelf) {
       ${shelf.map(book => `
         <div class="shelf-book">
           ${book.cover
-            ? `<img class="shelf-cover" src="${escHTML(book.cover)}" alt="${escHTML(book.title)}" loading="lazy" />`
+            ? `<img
+                 class="shelf-cover"
+                 src="${escHTML(book.cover)}"
+                 alt="${escHTML(book.title)}"
+                 loading="lazy"
+                 onerror="this.style.display='none'"
+               />`
             : `<div class="shelf-cover-fb">
-                <div class="shelf-fb-title">${escHTML(book.title)}</div>
+                 <div class="shelf-fb-title">${escHTML(book.title)}</div>
                </div>`
           }
           <div class="shelf-info">
             <div class="shelf-title">${escHTML(book.title)}</div>
             <div class="shelf-author">${escHTML(book.author)}</div>
-            ${book.genre ? `<div class="shelf-genre">${escHTML(book.genre)}</div>` : ""}
+            ${book.genre
+              ? `<div class="shelf-genre">${escHTML(book.genre)}</div>`
+              : ""
+            }
           </div>
         </div>
       `).join("")}
@@ -219,10 +256,19 @@ function renderProfileShelf(shelf) {
 
 function renderProfileActivity(activity) {
   const container = document.getElementById("profileActivity");
+  if (!container) return;
+
   if (!activity.length) {
     container.innerHTML = `<p class="profile-empty">No quiz history yet.</p>`;
     return;
   }
+
+  const timeAgo = typeof formatTime === "function" ? formatTime : (iso) => {
+    const diff = Date.now() - new Date(iso).getTime();
+    if (diff < 3600000)  return `${Math.floor(diff/60000)}m ago`;
+    if (diff < 86400000) return `${Math.floor(diff/3600000)}h ago`;
+    return new Date(iso).toLocaleDateString();
+  };
 
   container.innerHTML = activity.map(item => `
     <div class="activity-item">
@@ -230,7 +276,7 @@ function renderProfileActivity(activity) {
       <div class="activity-content">
         <div class="activity-title">
           Explored <strong>${escHTML(item.genre)}</strong>
-          — ${escHTML(item.subgenre)}
+          — ${escHTML(item.subgenre || "")}
           while feeling <strong>${escHTML(item.mood)}</strong>
         </div>
         <div class="activity-books">
@@ -238,24 +284,82 @@ function renderProfileActivity(activity) {
             `<span class="activity-book">${escHTML(b.title || "")}</span>`
           ).join("")}
         </div>
-        <div class="activity-time">${formatTime(item.created_at)}</div>
+        <div class="activity-time">${timeAgo(item.created_at)}</div>
       </div>
     </div>
   `).join("");
 }
 
+// ─── USERNAME EDIT ─────────────────────────────
+
+async function showUsernameEdit() {
+  const newName = prompt("Enter new username (letters, numbers, underscores only):");
+  if (!newName) return;
+
+  if (!/^[a-zA-Z0-9_]{3,24}$/.test(newName)) {
+    alert("Invalid username. Use 3-24 characters, letters numbers and underscores only.");
+    return;
+  }
+
+  const { error } = await db
+    .from("profiles")
+    .update({ username: newName })
+    .eq("id", currentUser.id);
+
+  if (error) {
+    alert("Could not update username: " + error.message);
+  } else {
+    currentProfile.username = newName;
+    alert("Username updated successfully.");
+    location.reload();
+  }
+}
+
+// ─── HELPERS ───────────────────────────────────
+
+function escHTML(str) {
+  if (!str) return "";
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
 // ─── INIT ──────────────────────────────────────
 
 document.addEventListener("DOMContentLoaded", async () => {
-  // Give auth.js time to initialize Supabase session
-  let waited = 0;
-  while (!currentUser && waited < 6000) {
-    await new Promise(resolve => setTimeout(resolve, 300));
-    waited += 300;
+  // First check if a session already exists
+  const { data: { session } } = await db.auth.getSession();
+
+  if (session) {
+    currentUser    = session.user;
+    if (typeof loadProfile === "function") {
+      currentProfile = await loadProfile(session.user.id);
+    }
+    loadProfilePage();
+    return;
   }
 
-  // One more safety delay
-  await new Promise(resolve => setTimeout(resolve, 200));
+  // Otherwise listen for auth state change
+  const { data: { subscription } } = db.auth.onAuthStateChange(
+    async (event, session) => {
+      if (session) {
+        currentUser = session.user;
+        if (typeof loadProfile === "function") {
+          currentProfile = await loadProfile(session.user.id);
+        }
+        subscription.unsubscribe();
+        loadProfilePage();
+      } else {
+        subscription.unsubscribe();
+        loadProfilePage();
+      }
+    }
+  );
 
-  loadProfilePage();
+  // Fallback: load after 5 seconds regardless
+  setTimeout(() => {
+    loadProfilePage();
+  }, 5000);
 });
