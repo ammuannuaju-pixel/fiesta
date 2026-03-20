@@ -2430,3 +2430,200 @@ body {
   opacity: 1;
   transition: opacity 0.3s ease;
 }
+/* ===== TASTE DNA MODAL ===== */
+
+.dna-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.92);
+  z-index: 3000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  backdrop-filter: blur(12px);
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  overflow-y: auto;
+}
+
+.dna-modal-visible { opacity: 1; }
+
+.dna-modal-box {
+  background: #080008;
+  border: 1px solid rgba(255,20,147,0.3);
+  max-width: 700px;
+  width: 100%;
+  padding: 2rem;
+  box-shadow: 0 0 80px rgba(255,20,147,0.15), 0 40px 80px rgba(0,0,0,0.6);
+  animation: slideUp 0.5s cubic-bezier(0.16,1,0.3,1);
+}
+
+.dna-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.8rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(255,20,147,0.15);
+}
+
+.dna-modal-label {
+  font-size: 0.68rem;
+  letter-spacing: 0.5em;
+  color: var(--pink);
+  font-family: var(--font-b);
+  font-weight: 300;
+}
+
+.dna-close-btn {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-3);
+  padding: 0.3rem 0.8rem;
+  font-family: var(--font-b);
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.dna-close-btn:hover {
+  border-color: var(--border-2);
+  color: var(--text);
+}
+
+.dna-loading {
+  text-align: center;
+  padding: 3rem;
+}
+
+.dna-loading p {
+  font-family: var(--font-i);
+  font-style: italic;
+  color: var(--text-2);
+  margin-top: 1rem;
+  font-size: 0.88rem;
+}
+
+.dna-charts-row {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.8rem;
+}
+
+.dna-chart-wrap {
+  background: #0a0008;
+  border: 1px solid var(--border);
+  padding: 0.5rem;
+  flex: 1;
+  min-width: 260px;
+  max-width: 300px;
+}
+
+.dna-chart-wrap canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.dna-summary {
+  font-family: var(--font-i);
+  font-style: italic;
+  font-size: 0.92rem;
+  color: var(--text-2);
+  line-height: 1.75;
+  text-align: center;
+  padding: 1.2rem 1.5rem;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  margin-bottom: 1.5rem;
+}
+
+.dna-stats-row {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  margin-bottom: 1.8rem;
+  flex-wrap: wrap;
+}
+
+.dna-stat {
+  text-align: center;
+}
+
+.dna-stat-num {
+  font-family: var(--font-d);
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--pink);
+  line-height: 1;
+  text-shadow: var(--glow-sm);
+}
+
+.dna-stat-label {
+  font-size: 0.62rem;
+  letter-spacing: 0.2em;
+  color: var(--text-3);
+  font-family: var(--font-b);
+  text-transform: uppercase;
+  margin-top: 0.25rem;
+}
+
+.dna-download-btn {
+  display: block;
+  width: 100%;
+  padding: 1rem;
+  background: transparent;
+  border: 1px solid var(--pink);
+  color: var(--pink);
+  font-family: var(--font-d);
+  font-size: 0.85rem;
+  letter-spacing: 0.3em;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: color 0.35s ease;
+}
+
+.dna-download-btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--pink);
+  transform: translateY(102%);
+  transition: transform 0.4s cubic-bezier(0.16,1,0.3,1);
+  z-index: 0;
+}
+
+.dna-download-btn:hover { color: var(--bg); }
+.dna-download-btn:hover::before { transform: translateY(0); }
+.dna-download-btn span { position: relative; z-index: 1; }
+
+.dna-empty {
+  text-align: center;
+  padding: 3rem;
+  font-family: var(--font-i);
+  font-style: italic;
+  color: var(--text-3);
+}
+
+/* DNA trigger button in nav */
+.nav-dna-btn {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-3);
+  padding: 0.25rem 0.65rem;
+  font-family: var(--font-b);
+  font-size: 0.68rem;
+  letter-spacing: 0.12em;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.nav-dna-btn:hover {
+  border-color: var(--border-2);
+  color: var(--pink);
+}
