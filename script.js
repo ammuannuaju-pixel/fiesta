@@ -570,6 +570,7 @@ async function fetchBooks() {
       loadingWrap.classList.add("hidden");
       subtitle.textContent = `Six books curated for your ${moodLabel} soul`;
       renderBooks(seedBooks);
+      if (typeof initBookTrailers === "function") setTimeout(initBookTrailers, 100);
       return;
     }
 
@@ -617,6 +618,7 @@ async function fetchBooks() {
     loadingWrap.classList.add("hidden");
     subtitle.textContent = `Six books curated for your ${moodLabel} soul`;
     renderBooks(finalBooks);
+    if (typeof initBookTrailers === "function") setTimeout(initBookTrailers, 100);
 
   } catch (err) {
     console.error("Book fetch error:", err);
@@ -628,6 +630,7 @@ async function fetchBooks() {
       loadingWrap.classList.add("hidden");
       subtitle.textContent = `Six books curated for your ${moodLabel} soul`;
       renderBooks(fallback);
+      if (typeof initBookTrailers === "function") setTimeout(initBookTrailers, 100);
     } else {
       loadingWrap.innerHTML = `<p style="color:var(--pink-pale);font-family:var(--font-i);font-style:italic">Something went wrong while curating your list. Please try again.</p>`;
     }
