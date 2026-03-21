@@ -12,10 +12,8 @@
 </head>
 <body>
 
-  <!-- Seasonal particle canvas (fixed, behind everything) -->
   <canvas id="seasonalCanvas"></canvas>
 
-  <!-- Top navigation -->
   <nav id="mainNav">
     <div class="nav-brand">FIESTA</div>
     <div class="nav-tagline">Books for Every Soul</div>
@@ -26,7 +24,6 @@
     </div>
   </nav>
 
-  <!-- ===================== HERO ===================== -->
   <section id="hero">
     <div class="hero-content">
       <div class="hero-label">WELCOME TO</div>
@@ -54,27 +51,22 @@
     </div>
   </section>
 
-  <!-- Seasonal banner (shown on scroll) -->
   <div id="seasonalBanner" class="seasonal-banner hidden" role="banner"></div>
-  <!-- Book of the Day -->
+
   <section id="bookOfDaySection" class="bod-section"></section>
-  <!-- Daily Mood Check-in -->
   <section id="checkinWidget" class="checkin-section"></section>
-  <!-- ===================== QUIZ ===================== -->
+
   <section id="quiz">
     <div class="quiz-container">
-
       <div class="quiz-header">
         <h2>Discover Your Next Read</h2>
         <p>A few questions to curate the perfect reading list for you</p>
       </div>
-
       <div class="progress-bar" role="progressbar" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100">
         <div class="progress-fill" id="progressFill"></div>
       </div>
       <div class="progress-text" id="progressText">Step 1 of 4</div>
 
-      <!-- Step 1: Genre -->
       <div class="quiz-step active" id="step1">
         <h3 class="step-question">What genre speaks to your soul right now?</h3>
         <div class="options-grid">
@@ -89,13 +81,11 @@
         </div>
       </div>
 
-      <!-- Step 2: Sub-genre (dynamically filled) -->
       <div class="quiz-step" id="step2">
         <h3 class="step-question" id="subgenreQ">Narrow it down...</h3>
         <div class="options-grid" id="subgenreGrid"></div>
       </div>
 
-      <!-- Step 3: Mood -->
       <div class="quiz-step" id="step3">
         <h3 class="step-question">What is your emotional state right now?</h3>
         <div class="options-grid">
@@ -110,7 +100,6 @@
         </div>
       </div>
 
-      <!-- Step 4: Length + Submit -->
       <div class="quiz-step" id="step4">
         <h3 class="step-question">How deep do you want to dive in?</h3>
         <div class="options-grid three-col">
@@ -129,22 +118,19 @@
         </div>
         <button class="cta-btn" id="revealBtn" disabled>Reveal My Books</button>
       </div>
-
     </div>
   </section>
 
-  <!-- ===================== RESULTS ===================== -->
   <section id="results" class="hidden">
+
+    <div id="streakPanel" class="streak-panel-wrap"></div>
 
     <div class="results-header">
       <div class="results-label">YOUR CURATED LIST</div>
-      <!-- Streak and Badges Panel -->
-      <div id="streakPanel" class="streak-panel-wrap"></div>
       <h2 id="resultsTitle">Books Chosen For Your Soul</h2>
       <p id="resultsSubtitle"></p>
     </div>
 
-    <!-- Music player -->
     <div class="music-bar" id="musicBar">
       <div class="music-waves" id="musicWaves" aria-hidden="true">
         <span></span><span></span><span></span><span></span><span></span>
@@ -155,36 +141,23 @@
       </div>
       <button class="music-btn" id="musicBtn">Enable Music</button>
       <div class="yt-wrap hidden" id="ytWrap">
-        <iframe
-          id="ytFrame"
-          width="1"
-          height="1"
-          frameborder="0"
-          allow="autoplay; encrypted-media"
-          title="Background music player"
-        ></iframe>
+        <iframe id="ytFrame" width="1" height="1" frameborder="0"
+          allow="autoplay; encrypted-media" title="Background music player"></iframe>
       </div>
     </div>
 
-    <!-- Loading state -->
     <div class="loading-wrap" id="loadingWrap">
       <div class="loader-ring"></div>
       <p class="loader-text">Curating your perfect reads...</p>
     </div>
 
-    <!-- Book cards -->
     <div class="books-grid" id="booksGrid"></div>
-    <!-- Reader Twins -->
-    <div class="social-section" id="twinsContainer"></div>
 
-    <!-- Activity Feed -->
+    <div class="social-section" id="twinsContainer"></div>
     <div class="social-section" id="feedContainer"></div>
 
-    <!-- Reading Room -->
-    <!-- Reading Room -->
     <div class="reading-room hidden" id="readingRoomWrap">
 
-      <!-- Room Header -->
       <div class="room-header">
         <div class="room-header-left">
           <div class="room-title" id="roomTitle"></div>
@@ -193,18 +166,18 @@
         <div class="room-header-right">
           <div class="connection-indicator">
             <div class="connection-dot" id="connectionDot"></div>
-            <span class="connection-label">Live</span>
+            <span class="connection-label">Connecting...</span>
           </div>
         </div>
       </div>
 
-      <!-- Online Users -->
       <div class="room-presence" id="roomPresence">
         <div class="presence-label">In this room</div>
-        <div class="presence-avatars" id="presenceAvatars"></div>
+        <div class="presence-avatars" id="presenceAvatars">
+          <span class="presence-empty">Loading...</span>
+        </div>
       </div>
 
-      <!-- Pinned Book and Discussion Prompt -->
       <div class="room-prompt-bar" id="roomPromptBar">
         <div class="prompt-pin-icon">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
@@ -213,40 +186,32 @@
         </div>
         <div class="prompt-content">
           <div class="prompt-label">THIS WEEK'S PROMPT</div>
-          <div class="prompt-text" id="promptText"></div>
+          <div class="prompt-text" id="promptText">Loading...</div>
         </div>
       </div>
 
-      <!-- Messages -->
       <div class="chat-messages" id="chatMessages"></div>
 
-      <!-- Reaction Picker -->
       <div class="reaction-picker hidden" id="reactionPicker">
-        <button onclick="addReaction('love')" title="Love">Love</button>
-        <button onclick="addReaction('fire')" title="Fire">Fire</button>
-        <button onclick="addReaction('mind')" title="Mind Blown">Mind Blown</button>
-        <button onclick="addReaction('cry')" title="Cry">Cry</button>
-        <button onclick="addReaction('agree')" title="Agree">Agree</button>
+        <button onclick="addReaction('love')">Love</button>
+        <button onclick="addReaction('fire')">Fire</button>
+        <button onclick="addReaction('mind')">Mind Blown</button>
+        <button onclick="addReaction('cry')">Cry</button>
+        <button onclick="addReaction('agree')">Agree</button>
       </div>
 
-      <!-- Input -->
       <div class="chat-input-wrap">
-        <input
-          type="text"
-          id="chatInput"
+        <input type="text" id="chatInput"
           placeholder="Share your thoughts with the room..."
-          maxlength="500"
-        />
-        <button
-          class="chat-send-btn"
-          onclick="sendChatMessage(document.getElementById('chatInput').value)"
-        >
+          maxlength="500" />
+        <button class="chat-send-btn"
+          onclick="sendChatMessage(document.getElementById('chatInput').value)">
           Send
         </button>
       </div>
 
     </div>
-    <!-- Chat History -->
+
     <div class="chat-history-section" id="chatHistorySection">
       <div class="chat-history-header">
         <div class="chat-history-label">YOUR READING ROOM HISTORY</div>
@@ -259,14 +224,45 @@
         <div class="chat-history-list" id="chatHistoryList"></div>
       </div>
     </div>
-    <!-- Restart -->
+
     <div class="restart-row">
       <button class="restart-btn" id="restartBtn">Start Over</button>
     </div>
 
   </section>
 
-  <script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <!-- Username Modal -->
+  <div class="modal-overlay hidden" id="authModal">
+    <div class="modal-box">
+      <div class="modal-label">JOIN FIESTA</div>
+      <h3 class="modal-title">Create Your Reader Identity</h3>
+      <p class="modal-sub">Set a username to save your taste profile and connect with other readers.</p>
+      <form onsubmit="return false">
+        <div class="modal-field">
+          <label class="modal-field-label">Username</label>
+          <input type="text" id="usernameInput" placeholder="e.g. darkromance_lover"
+            maxlength="24" autocomplete="off" />
+          <div class="modal-field-hint">Letters, numbers and underscores only. Max 24 characters.</div>
+        </div>
+        <div class="modal-field">
+          <label class="modal-field-label">Email <span class="optional">(optional)</span></label>
+          <input type="email" id="emailInput" placeholder="you@example.com" autocomplete="off" />
+          <div class="modal-field-hint">Add an email to keep your profile across devices.</div>
+        </div>
+        <div class="modal-field">
+          <label class="modal-field-label" id="passwordLabel" style="display:none">Password</label>
+          <input type="password" id="passwordInput" placeholder="At least 8 characters"
+            maxlength="72" autocomplete="new-password" style="display:none" />
+        </div>
+      </form>
+      <div class="modal-error hidden" id="modalError"></div>
+      <button class="modal-submit" id="modalSubmit">Save My Identity</button>
+      <button class="modal-skip" id="modalSkip">Skip for now</button>
+    </div>
+  </div>
+
+  <!-- All scripts in correct order -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
   <script src="supabase.js"></script>
   <script src="auth.js"></script>
   <script src="social.js"></script>
@@ -279,53 +275,6 @@
   <script src="tasteDNA.js"></script>
   <script src="recommendations.js"></script>
   <script src="script.js"></script>
-  <!-- Username Modal -->
-<div class="modal-overlay hidden" id="authModal">
-  <div class="modal-box">
-    <div class="modal-label">JOIN FIESTA</div>
-    <h3 class="modal-title">Create Your Reader Identity</h3>
-    <p class="modal-sub">Set a username to save your taste profile and connect with other readers.</p>
 
-    <div class="modal-field">
-      <label class="modal-field-label">Username</label>
-      <input
-        type="text"
-        id="usernameInput"
-        placeholder="e.g. darkromance_lover"
-        maxlength="24"
-        autocomplete="off"
-      />
-      <div class="modal-field-hint">Letters, numbers and underscores only. Max 24 characters.</div>
-    </div>
-
-    <div class="modal-field">
-      <label class="modal-field-label">Email <span class="optional">(optional)</span></label>
-      <input
-        type="email"
-        id="emailInput"
-        placeholder="you@example.com"
-        autocomplete="off"
-      />
-      <div class="modal-field-hint">Add an email to keep your profile across devices.</div>
-    </div>
-
-    <div class="modal-field">
-      <label class="modal-field-label" id="passwordLabel" style="display:none">Password</label>
-      <input
-        type="password"
-        id="passwordInput"
-        placeholder="At least 8 characters"
-        maxlength="72"
-        autocomplete="new-password"
-        style="display:none"
-      />
-    </div>
-
-    <div class="modal-error hidden" id="modalError"></div>
-
-    <button class="modal-submit" id="modalSubmit">Save My Identity</button>
-    <button class="modal-skip" id="modalSkip">Skip for now</button>
-  </div>
-</div>
 </body>
 </html>
