@@ -9,6 +9,8 @@ const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     autoRefreshToken:   true,
     detectSessionInUrl: true,
     lockAcquireTimeout: 10000,
+    storageKey:         "fiesta-auth-token",
+    storage:            window.localStorage,
   },
   realtime: {
     params: {
@@ -21,6 +23,3 @@ const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     },
   },
 });
-
-let currentUser    = null;
-let currentProfile = null;
