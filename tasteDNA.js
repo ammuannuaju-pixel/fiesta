@@ -1,7 +1,3 @@
-// tasteDNA.js — Reading Personality Visualisation
-
-// ─── COLOURS PER GENRE AND MOOD ────────────────
-
 const GENRE_COLORS = {
   romance:    "#FF1493",
   fantasy:    "#9B59B6",
@@ -440,7 +436,7 @@ function downloadDNACard() {
   });
 
   // Username
-  const username = currentProfile?.username || "Reader";
+  const username = window.currentProfile?.username || "Reader";
   ctx.font      = "italic 20px serif";
   ctx.fillStyle = "rgba(255,255,255,0.3)";
   ctx.textAlign = "center";
@@ -475,3 +471,8 @@ function wrapTextDNA(ctx, text, x, y, maxWidth, lineHeight) {
   }
   ctx.fillText(line.trim(), x, currentY);
 }
+
+// ─── GLOBAL EXPORTS ────────────────────────────
+
+window.showTasteDNA    = showTasteDNA;
+window.downloadDNACard = downloadDNACard;

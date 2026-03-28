@@ -1,7 +1,3 @@
-// auth.js — Authentication and profile management
-
-// ─── INIT AUTH ─────────────────────────────────
-
 async function initAuth() {
   try {
     // Check if session already exists
@@ -10,6 +6,7 @@ async function initAuth() {
     if (session) {
       currentUser    = session.user;
       currentProfile = await loadProfile(session.user.id);
+      window.currentProfile = currentProfile;
       updateNavForUser(currentProfile);
       return;
     }
@@ -33,6 +30,7 @@ async function signInAnonymously() {
       currentUser = data.user;
       const autoUsername = "reader_" + data.user.id.slice(0, 4);
       currentProfile = await createProfile(data.user.id, autoUsername);
+      window.currentProfile = currentProfile;
       updateNavForUser(currentProfile);
       return data.user;
     }
@@ -58,6 +56,7 @@ async function signInAnonymously() {
         const autoUsername = "reader_" + signInData.user.id.slice(0, 4);
         currentProfile = await createProfile(signInData.user.id, autoUsername);
       }
+      window.currentProfile = currentProfile;
       updateNavForUser(currentProfile);
       return signInData.user;
     }
@@ -75,6 +74,7 @@ async function signInAnonymously() {
     currentUser    = signUpData.user;
     const autoUsername = "reader_" + signUpData.user.id.slice(0, 4);
     currentProfile = await createProfile(signUpData.user.id, autoUsername);
+    window.currentProfile = currentProfile;
     updateNavForUser(currentProfile);
     return signUpData.user;
 
@@ -109,6 +109,7 @@ async function upgradeAccount(email, password, username) {
   if (profileError) return { error: profileError };
 
   currentProfile = await loadProfile(data.user.id);
+  window.currentProfile = currentProfile;
   return { data };
 }
 
@@ -165,12 +166,14 @@ db.auth.onAuthStateChange(async (event, session) => {
   if (event === "SIGNED_IN" && session) {
     currentUser    = session.user;
     currentProfile = await loadProfile(session.user.id);
+    window.currentProfile = currentProfile;
     updateNavForUser(currentProfile);
   }
 
   if (event === "SIGNED_OUT") {
     currentUser    = null;
     currentProfile = null;
+    window.currentProfile = null;
     const navUser = document.getElementById("navUser");
     if (navUser) navUser.style.display = "none";
   }

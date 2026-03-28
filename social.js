@@ -1,7 +1,3 @@
-// social.js — Social features: follows, feed, annotations, reading rooms
-
-// ─── FOLLOWS ───────────────────────────────────
-
 async function followUser(targetId) {
   if (!currentUser || targetId === currentUser.id) return false;
   const { error } = await db
@@ -596,6 +592,45 @@ async function handleUpvote(btn) {
   await upvoteAnnotation(id);
 }
 
+// ─── CHAT HISTORY ──────────────────────────────
+
+let chatHistoryOpen = false;
+
+async function loadChatHistory() {
+  if (!currentUser) return;
+  const loading = document.getElementById("chatHistoryLoading");
+  const list    = document.getElementById("chatHistoryList");
+
+  if (loading) loading.classList.remove("hidden");
+  if (list)    list.innerHTML = "";
+
+  const { data } = await db
+    .from("room_messages")
+    .select("id, content, created_at, room_id, reading_rooms(genre, mood)")
+    .eq("user_id", currentUser.id)
+    .order("created_at", { ascending: false })
+    .limit(30);
+
+  if (loading) loading.classList.add("hidden");
+
+  if (!data || !data.length) {
+    if (list) list.innerHTML = `<div class="ann-empty">No chat history yet.</div>`;
+    return;
+  }
+
+  if (list) {
+    list.innerHTML = data.map(msg => `
+      <div class="ann-item">
+        <div class="ann-body">
+          <div class="ann-user">${escHTML(msg.reading_rooms?.genre || "Unknown")} · ${escHTML(msg.reading_rooms?.mood || "")}</div>
+          <div class="ann-text">${escHTML(msg.content)}</div>
+          <div class="ann-time">${formatTime(msg.created_at)}</div>
+        </div>
+      </div>
+    `).join("");
+  }
+}
+
 // ─── UTILS ─────────────────────────────────────
 
 function seedToHsl(seed) {
@@ -623,3 +658,32 @@ function formatTime(iso) {
   if (diff < 86400000) return new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   return new Date(iso).toLocaleDateString([], { month: "short", day: "numeric" });
 }
+
+// ─── GLOBAL EXPORTS ────────────────────────────
+
+window.toggleChatHistory    = async function() {
+  const content = document.getElementById("chatHistoryContent");
+  const btn     = document.querySelector(".chat-history-toggle");
+  chatHistoryOpen = !chatHistoryOpen;
+
+  if (chatHistoryOpen) {
+    content.classList.remove("hidden");
+    if (btn) btn.textContent = "Hide";
+    await loadChatHistory();
+  } else {
+    content.classList.add("hidden");
+    if (btn) btn.textContent = "Show";
+  }
+};
+
+window.enterReadingRoom      = enterReadingRoom;
+window.sendChatMessage       = sendChatMessage;
+window.addReaction           = addReaction;
+window.showReactionPicker    = showReactionPicker;
+window.handleFollowClick     = handleFollowClick;
+window.handleUpvote          = handleUpvote;
+window.renderReaderTwins     = renderReaderTwins;
+window.renderFeed            = renderFeed;
+window.saveQuizResult        = saveQuizResult;
+window.loadAndRenderAnnotations = loadAndRenderAnnotations;
+window.postAnnotation        = postAnnotation;
